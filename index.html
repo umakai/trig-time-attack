@@ -51,9 +51,16 @@
   .rule{color:var(--ink-dim);font-size:12px;text-align:center;margin-top:12px;}
 
   /* ---------- game screen ---------- */
-  .hud{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
   .hud .score{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
   .hud .streak{font-size:20px;color:var(--gold);font-weight:800;min-width:64px;text-align:right;}
+  .pausebtn{
+    background:var(--panel);color:var(--ink-dim);border:none;border-radius:10px;
+    padding:8px 16px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .pausebtn:active{background:var(--panel-hi);}
+  .fb.pausebox{border-color:var(--panel-hi);}
+  .fb.pausebox .pz-title{font-size:20px;font-weight:800;margin-bottom:16px;}
   .timebar{height:14px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:6px;}
   .timebar .fill{height:100%;width:100%;background:var(--gold);border-radius:99px;transition:width .1s linear;}
   .timebar .fill.low{background:var(--ng);}
@@ -120,6 +127,7 @@
     padding:6px 10px;margin-bottom:12px;letter-spacing:.05em;
   }
   .fb svg{display:block;margin:0 auto;}
+  .fb .fb-note{font-size:13px;color:var(--ink-dim);margin-top:8px;line-height:1.5;}
 
   /* ---------- result screen ---------- */
   .result-head{text-align:center;margin:30px 0 20px;}
@@ -196,6 +204,7 @@
   <div class="screen" id="scr-game">
     <div class="hud">
       <div class="score" id="score">0</div>
+      <button class="pausebtn" id="btn-pause">⏸ 中断</button>
       <div class="streak" id="streak"></div>
     </div>
     <div class="timebar"><div class="fill" id="timefill"></div></div>
@@ -233,6 +242,18 @@
     <div class="fb-a">正解は <b id="fb-a"></b></div>
     <div class="fb-pen">−100点 ／ 残り時間 −3秒</div>
     <div id="fb-circle"></div>
+    <div class="fb-note" id="fb-note"></div>
+  </div>
+</div>
+
+<!-- ===== PAUSE OVERLAY ===== -->
+<div class="overlay" id="pause-overlay">
+  <div class="fb pausebox">
+    <div class="pz-title">⏸ 一時停止中</div>
+    <div class="btnrow">
+      <button class="btn-home" id="btn-quit">やめる</button>
+      <button class="btn-retry" id="btn-resume">再開</button>
+    </div>
   </div>
 </div>
 
@@ -392,6 +413,14 @@
     $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
+    const note=$("fb-note");
+    if(cur.f==="tan"){
+      note.textContent = cur.ans==="none"
+        ? "直線が垂直 → 傾きは定義できない"
+        : "tan ＝ 原点を通るこの直線の傾き（x=1 の線と交わる高さ）";
+    }else{
+      note.textContent="";
+    }
     $("overlay").classList.add("show");
     setTimeout(()=>{
       $("overlay").classList.remove("show");
@@ -402,7 +431,8 @@
 
   // ---------- unit circle SVG ----------
   function circleSVG(f,deg){
-    const S=200,c=S/2,r=76;
+    const S=200,c=S/2;
+    const r = f==="tan" ? 52 : 76;   // tan needs room for ±√3 on the x=1 line
     const th=deg*Math.PI/180;
     const px=c+r*Math.cos(th), py=c-r*Math.sin(th);
     let extra="";
@@ -412,16 +442,15 @@
       extra='<line x1="'+px+'" y1="'+c+'" x2="'+c+'" y2="'+c+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
            +'<line x1="'+px+'" y1="'+py+'" x2="'+px+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
     }else{
-      // tan: extend ray to x=1 line (if defined)
-      extra='<line x1="'+(c+r)+'" y1="'+(c-r*1.15)+'" x2="'+(c+r)+'" y2="'+(c+r*1.15)+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
-      const cosv=Math.cos(th);
+      const cosv=Math.cos(th), sinv=Math.sin(th), ext=1.75;
+      // the "slope" image: full line through the origin, both directions
+      extra+='<line x1="'+(c-r*ext*cosv)+'" y1="'+(c+r*ext*sinv)+'" x2="'+(c+r*ext*cosv)+'" y2="'+(c-r*ext*sinv)+'" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="4 4" opacity=".75"/>';
+      // x=1 guide line
+      extra+='<line x1="'+(c+r)+'" y1="10" x2="'+(c+r)+'" y2="190" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
       if(Math.abs(cosv)>0.001){
-        const t=Math.tan(th), ty=c-r*t;
-        const clTy=Math.max(c-r*1.15,Math.min(c+r*1.15,ty));
-        if(ty===clTy){
-          extra+='<line x1="'+(c+r)+'" y1="'+c+'" x2="'+(c+r)+'" y2="'+ty+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
-               +'<line x1="'+c+'" y1="'+c+'" x2="'+(c+(cosv>0?r:-r))+'" y2="'+(c-(cosv>0?r:-r)*Math.tan(th))+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
-        }
+        const ty=c-r*Math.tan(th);
+        extra+='<line x1="'+(c+r)+'" y1="'+c+'" x2="'+(c+r)+'" y2="'+ty+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
+             +'<circle cx="'+(c+r)+'" cy="'+ty+'" r="4" fill="var(--ok)"/>';
       }
     }
     return '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'">'
@@ -484,6 +513,36 @@
   $("btn-start").addEventListener("click",start);
   $("btn-retry").addEventListener("click",start);
   $("btn-home").addEventListener("click",()=>show("scr-start"));
+
+  // ---------- pause ----------
+  $("btn-pause").addEventListener("click",()=>{
+    if(!running||paused) return;
+    paused=true;
+    $("question").style.visibility="hidden";
+    $("pause-overlay").classList.add("show");
+  });
+  $("btn-resume").addEventListener("click",()=>{
+    $("pause-overlay").classList.remove("show");
+    $("question").style.visibility="visible";
+    paused=false;
+    nextQuestion();   // fresh question: no thinking-time exploit
+  });
+  $("btn-quit").addEventListener("click",()=>{
+    running=false; paused=false;
+    clearInterval(tick);
+    $("pause-overlay").classList.remove("show");
+    $("question").style.visibility="visible";
+    show("scr-start");
+  });
+
+  // auto-pause when the tab/app goes to background (e.g. phone call)
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden && running && !paused){
+      paused=true;
+      $("question").style.visibility="hidden";
+      $("pause-overlay").classList.add("show");
+    }
+  });
 })();
 </script>
 </body>
