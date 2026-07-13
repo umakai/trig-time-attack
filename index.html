@@ -55,7 +55,13 @@
     border:1px solid var(--panel-hi);border-radius:14px;
     padding:12px;margin-bottom:4px;
   }
-  .scard-title{font-size:11px;color:var(--ink-dim);letter-spacing:.15em;margin-bottom:10px;}
+  .scard-title{
+    font-size:12px;color:var(--ink);font-weight:800;letter-spacing:.14em;
+    margin-bottom:10px;display:flex;align-items:center;gap:7px;
+  }
+  .scard-title::before{
+    content:"";width:3px;height:13px;border-radius:2px;background:var(--gold);
+  }
   .srow{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
   .srow:last-child{margin-bottom:0;}
   .srow .sl{width:44px;flex-shrink:0;font-size:12px;color:var(--ink-dim);font-weight:700;}
@@ -110,6 +116,9 @@
   }
   .start-btn:active{transform:scale(.98);}
   .rule{color:var(--ink-dim);font-size:12px;text-align:center;margin:2px 0 18px;line-height:1.6;}
+  .rule b{font-weight:800;color:var(--ink);}
+  .rule b.pl{color:var(--gold);}
+  .rule b.mn{color:var(--ng);}
   .verbtn{
     margin-top:10px;align-self:center;background:none;border:none;
     color:var(--ink-dim);font-size:12px;font-family:inherit;cursor:pointer;
@@ -260,7 +269,7 @@
       <button data-v="practice">📖 練習</button>
     </div>
 
-    <div class="rule" id="rule-text">正解 +100点、2秒以内なら +50点、3連続からコンボボーナス。<br>ミスは −100点＆残り時間 −3秒！</div>
+    <div class="rule" id="rule-text">正解 <b class="pl">+100点</b>、2秒以内なら <b class="pl">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class="mn">−100点</b>＆残り時間 <b class="mn">−3秒</b>！</div>
 
     <div class="scard">
       <div class="scard-title">出題設定</div>
@@ -316,7 +325,7 @@
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
     </div>
-    <button class="verbtn" id="btn-ver">v1.6.0 ｜ 更新履歴</button>
+    <button class="verbtn" id="btn-ver">v1.6.1 ｜ 更新履歴</button>
   </div>
 
   <!-- ===== GAME ===== -->
@@ -401,6 +410,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.6.1</b> スタート画面を刷新（タブ型のモード切替・出題設定カード・ランキング常設ボタン、レイアウトシフト解消）。練習モードを改善：ミス時のペナルティ表示を撤廃し読み取りヒントを追加、単位円に有名角の参考動径（点線）を表示。</p>
     <p><b>v1.6.0</b> ランクモードのクイック選択（BASIC／ADVANCED／EXPERT）を追加。練習モードを追加：時間・スコアなしで、単位円（動径あり／白紙を選択可）を見ながら演習できます。</p>
     <p><b>v1.5.0</b> オンラインランキング（TOP100）を追加。対象は「度数法・0°〜90°」「度数法・0°〜180°」「弧度法・一般角」の関数ミックス3モード。名前は自動生成の匿名ハンドルのみで、個人情報は送信されません。</p>
     <p><b>v1.4.1</b>（2026-07-13）バグ修正：ミス復習中にアプリを切り替えるとタイマーが裏で進む問題／素早い連続タップが誤回答になる問題。バージョン表示を追加。</p>
@@ -519,8 +529,8 @@
     $("chips-wrap").style.display = prac ? "none" : "";
     $("best-view").style.display = prac ? "none" : "";
     $("rule-text").innerHTML = prac
-      ? "時間・スコアなし。単位円を見ながらじっくり練習。<br>ミスすると図解つきで正解を確認できます。"
-      : "正解 +100点、2秒以内なら +50点、3連続からコンボボーナス。<br>ミスは −100点＆残り時間 −3秒！";
+      ? "時間・スコアなし。<b>単位円</b>を見ながらじっくり練習。<br>ミスすると<b>図解つき</b>で正解を確認できます。"
+      : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！";
     if(prac){ clearChips(); }
   }
   refreshStartUI();
@@ -588,11 +598,22 @@
     qStart=performance.now();
   }
 
-  // plain unit circle for practice mode: axes + circle (+ optional radius). No answer guides.
+  // plain unit circle for practice mode: axes + circle + faint famous-angle rays (+ optional radius)
   function plainCircle(deg,showRad){
     const S=170,c=S/2,r=64;
     const th=deg*Math.PI/180;
     const px=c+r*Math.cos(th), py=c-r*Math.sin(th);
+    // faint dashed rays for the famous angles in the current range (skip axis-aligned ones)
+    const famous = settings.range==="q1" ? ANGLES_Q1
+                 : settings.range==="half" ? ANGLES_HALF
+                 : ANGLES_FULL;
+    let rays="";
+    famous.forEach(a=>{
+      if(a%90===0) return;              // axes already show these
+      const t=a*Math.PI/180;
+      rays+='<line x1="'+c+'" y1="'+c+'" x2="'+(c+r*Math.cos(t))+'" y2="'+(c-r*Math.sin(t))
+           +'" stroke="var(--ink-dim)" stroke-width="1" stroke-dasharray="3 4" opacity=".35"/>';
+    });
     let rad="";
     if(showRad){
       rad='<line x1="'+c+'" y1="'+c+'" x2="'+px+'" y2="'+py+'" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>'
@@ -601,6 +622,7 @@
     return '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'">'
       +'<line x1="6" y1="'+c+'" x2="'+(S-6)+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1"/>'
       +'<line x1="'+c+'" y1="6" x2="'+c+'" y2="'+(S-6)+'" stroke="var(--ink-dim)" stroke-width="1"/>'
+      +rays
       +'<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="var(--ink)" stroke-width="1.5"/>'
       +rad+'</svg>';
   }
@@ -685,11 +707,17 @@
     $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
+    const prac = settings.mode==="practice";
+    $("overlay").querySelector(".fb-pen").style.display = prac ? "none" : "";
     const note=$("fb-note");
     if(cur.f==="tan"){
       note.textContent = cur.ans==="none"
         ? "直線が垂直 → 傾きは定義できない"
         : "tan ＝ 原点を通るこの直線の傾き（x=1 の線と交わる高さ）";
+    }else if(prac){
+      note.textContent = cur.f==="sin"
+        ? "sin ＝ 動径の先の点の高さ（y座標）"
+        : "cos ＝ 動径の先の点の横位置（x座標）";
     }else{
       note.textContent="";
     }
