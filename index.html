@@ -145,6 +145,23 @@
   .rank-row .sc{font-family:ui-monospace,Menlo,monospace;font-weight:800;flex-shrink:0;}
   .rank-row.me{background:rgba(255,201,77,.14);outline:1px solid var(--gold);}
   .rank-sub{font-size:12px;color:var(--ink-dim);text-align:center;margin-bottom:6px;}
+
+  /* my page */
+  #scr-start{position:relative;}
+  .mypage-btn{
+    position:absolute;top:0;right:0;
+    width:44px;height:44px;border:none;border-radius:12px;
+    background:var(--panel);font-size:20px;cursor:pointer;
+  }
+  .mypage-btn:active{background:var(--panel-hi);}
+  .mp-badge{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .mp-emoji{font-size:38px;}
+  .mp-bname{font-size:18px;font-weight:800;color:var(--gold);}
+  .mp-bnext{font-size:12px;color:var(--ink-dim);}
+  .mp-bar{height:8px;border-radius:99px;background:var(--panel-hi);overflow:hidden;margin-bottom:14px;}
+  .mp-fill{height:100%;background:var(--gold);border-radius:99px;}
+  .mp-stats{display:flex;gap:8px;margin-bottom:14px;}
+  .mp-sec{font-size:11px;color:var(--ink-dim);letter-spacing:.12em;margin:12px 0 6px;font-weight:700;}
   .changelog{text-align:left;max-height:65vh;overflow-y:auto;}
   .changelog p{font-size:13px;line-height:1.6;margin-bottom:10px;color:var(--ink);}
   .changelog b{color:var(--gold);font-family:ui-monospace,Menlo,monospace;}
@@ -266,6 +283,7 @@
 
   <!-- ===== START ===== -->
   <div class="screen active" id="scr-start">
+    <button class="mypage-btn" id="btn-mypage">🔰</button>
     <div class="title">三角比 <span class="num">60</span>秒タイムアタック</div>
     <div class="subtitle">有名角の値を、見た瞬間に。</div>
 
@@ -329,7 +347,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.6.1 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.7.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -394,6 +412,33 @@
   </div>
 </div>
 
+<!-- ===== MY PAGE OVERLAY ===== -->
+<div class="overlay" id="mp-overlay">
+  <div class="fb pausebox changelog" style="max-width:360px">
+    <div class="pz-title" style="text-align:center;margin-bottom:12px" id="mp-handle">👤</div>
+    <div class="mp-badge">
+      <span class="mp-emoji" id="mp-emoji">🔰</span>
+      <div>
+        <div class="mp-bname" id="mp-bname">見習い</div>
+        <div class="mp-bnext" id="mp-bnext"></div>
+      </div>
+    </div>
+    <div class="mp-bar"><div class="mp-fill" id="mp-fill" style="width:0%"></div></div>
+    <div class="mp-stats">
+      <div class="stat"><div class="v" id="mp-total">0</div><div class="k">累計スコア</div></div>
+      <div class="stat"><div class="v" id="mp-plays">0</div><div class="k">プレイ</div></div>
+      <div class="stat"><div class="v" id="mp-pract">0</div><div class="k">練習</div></div>
+    </div>
+    <div class="mp-sec">自己ベスト TOP5</div>
+    <div id="mp-top"></div>
+    <div class="mp-sec">最近のプレイ</div>
+    <div id="mp-recent"></div>
+    <div class="btnrow">
+      <button class="btn-home" id="btn-mp-close">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== RANKING OVERLAY ===== -->
 <div class="overlay" id="rank-overlay">
   <div class="fb pausebox" style="max-width:360px">
@@ -415,6 +460,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.7.0</b> マイページを追加（画面右上のバッジから）：累計スコアのバッジ称号（🔰→🥉→🥈→🥇→💎→👑）、自己ベストTOP5、最近のプレイ履歴。記録はすべてこの端末の中だけに保存されます。オンラインランキング稼働開始。</p>
     <p><b>v1.6.1</b> スタート画面を刷新（タブ型のモード切替・出題設定カード・ランキング常設ボタン、レイアウトシフト解消）。練習モードを改善：ミス時のペナルティ表示を撤廃し読み取りヒントを追加、単位円に有名角の参考動径（点線）を表示。</p>
     <p><b>v1.6.0</b> ランクモードのクイック選択（BASIC／ADVANCED／EXPERT）を追加。練習モードを追加：時間・スコアなしで、単位円（動径あり／白紙を選択可）を見ながら演習できます。</p>
     <p><b>v1.5.0</b> オンラインランキング（TOP100）を追加。対象は「度数法・0°〜90°」「度数法・0°〜180°」「弧度法・一般角」の関数ミックス3モード。名前は自動生成の匿名ハンドルのみで、個人情報は送信されません。</p>
@@ -805,6 +851,18 @@
     running=false;
     clearInterval(tick);
     const prac = settings.mode==="practice";
+    // record personal stats (device-local)
+    const st=loadStats();
+    if(prac){
+      st.pract++;
+    }else{
+      st.total+=score;
+      st.plays++;
+      st.hist.unshift({t:Date.now(),k:skey(),s:score});
+      st.hist=st.hist.slice(0,100);
+    }
+    saveStats(st);
+    updateMyBtn();
     if(prac){
       $("r-score").textContent=correctCount;
       $("r-lab").textContent="正解数";
@@ -947,6 +1005,83 @@
       btn.disabled=false; btn.textContent="🏆 ランキングに登録";
     }
   });
+
+  // ---------- personal stats & badges (device-local only) ----------
+  const BADGES=[
+    [0,"見習い","🔰"],[5000,"ブロンズ","🥉"],[25000,"シルバー","🥈"],
+    [100000,"ゴールド","🥇"],[300000,"プラチナ","💎"],[1000000,"レジェンド","👑"]
+  ];
+  function loadStats(){
+    let s={};
+    try{ s=JSON.parse(localStorage.getItem("tta-stats")||"{}"); }catch(e){}
+    return Object.assign({total:0,plays:0,pract:0,hist:[]},s);
+  }
+  function saveStats(s){
+    try{ localStorage.setItem("tta-stats",JSON.stringify(s)); }catch(e){}
+  }
+  function badgeOf(total){
+    let i=0;
+    while(i+1<BADGES.length && total>=BADGES[i+1][0]) i++;
+    return i;
+  }
+  function updateMyBtn(){
+    $("btn-mypage").textContent = BADGES[badgeOf(loadStats().total)][2];
+  }
+  function fmtModeKey(k){
+    const [f,u,r]=k.split("-");
+    if(RANKED[k]){
+      return {"mix-deg-q1":"BASIC","mix-deg-half":"ADVANCED","mix-rad-gen":"EXPERT"}[k];
+    }
+    const F={sin:"sin",cos:"cos",tan:"tan",mix:"MIX"}[f];
+    const U={deg:"度",rad:"弧",mix:"混"}[u];
+    const R={q1:"〜90°",half:"〜180°",full:"〜360°",gen:"一般角"}[r];
+    return F+"・"+U+"・"+R;
+  }
+  function fmtDate(t){
+    const d=new Date(t);
+    return (d.getMonth()+1)+"/"+d.getDate();
+  }
+  function renderRows(el,items){
+    if(!items.length){
+      el.innerHTML='<div class="rank-sub" style="padding:8px 0">まだ記録がありません</div>';
+      return;
+    }
+    el.innerHTML="";
+    items.forEach((it,i)=>{
+      const d=document.createElement("div");
+      d.className="rank-row"+(it.rank&&it.rank<=3?" top3":"");
+      d.innerHTML='<span class="pos">'+(it.rank||"")+'</span><span class="hd">'+it.label+'</span><span class="sc">'+it.score+'</span>';
+      el.appendChild(d);
+    });
+  }
+  function openMyPage(){
+    const st=loadStats();
+    $("mp-handle").textContent="👤 "+getHandle();
+    const bi=badgeOf(st.total);
+    $("mp-emoji").textContent=BADGES[bi][2];
+    $("mp-bname").textContent=BADGES[bi][1];
+    if(bi+1<BADGES.length){
+      const cur=BADGES[bi][0], next=BADGES[bi+1][0];
+      $("mp-bnext").textContent="次の「"+BADGES[bi+1][1]+"」まで あと "+(next-st.total).toLocaleString();
+      $("mp-fill").style.width=Math.min(100,(st.total-cur)/(next-cur)*100)+"%";
+    }else{
+      $("mp-bnext").textContent="最高ランク到達！";
+      $("mp-fill").style.width="100%";
+    }
+    $("mp-total").textContent=st.total.toLocaleString();
+    $("mp-plays").textContent=st.plays;
+    $("mp-pract").textContent=st.pract;
+    const top=[...st.hist].sort((a,b)=>b.s-a.s).slice(0,5)
+      .map((h,i)=>({rank:i+1,label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
+    renderRows($("mp-top"),top);
+    const recent=st.hist.slice(0,5)
+      .map(h=>({rank:"",label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
+    renderRows($("mp-recent"),recent);
+    $("mp-overlay").classList.add("show");
+  }
+  $("btn-mypage").addEventListener("click",openMyPage);
+  $("btn-mp-close").addEventListener("click",()=>$("mp-overlay").classList.remove("show"));
+  updateMyBtn();
 
   // ---------- changelog ----------
   $("btn-ver").addEventListener("click",()=>$("ver-overlay").classList.add("show"));
