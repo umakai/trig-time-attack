@@ -52,17 +52,24 @@
 
   /* ---------- game screen ---------- */
   .hud{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
-  .hud .score{font-size:20px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
-  .hud .streak{font-size:13px;color:var(--gold);font-weight:700;min-width:52px;text-align:right;}
-  .timebar{height:8px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:6px;}
+  .hud .score{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
+  .hud .streak{font-size:20px;color:var(--gold);font-weight:800;min-width:64px;text-align:right;}
+  .timebar{height:14px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:6px;}
   .timebar .fill{height:100%;width:100%;background:var(--gold);border-radius:99px;transition:width .1s linear;}
   .timebar .fill.low{background:var(--ng);}
-  .timenum{font-size:12px;color:var(--ink-dim);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:4px;}
+  .timenum{font-size:20px;font-weight:800;color:var(--ink);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:4px;}
 
   .qarea{
     flex:1;display:flex;align-items:center;justify-content:center;
     border-radius:var(--radius);position:relative;min-height:150px;
   }
+  .pop{
+    position:absolute;top:4px;left:0;right:0;text-align:center;
+    font-weight:800;font-family:ui-monospace,Menlo,monospace;font-size:22px;
+    color:var(--ok);opacity:0;pointer-events:none;
+  }
+  .pop.show{animation:popup .8s ease-out;}
+  @keyframes popup{0%{opacity:0;transform:translateY(10px);}25%{opacity:1;}100%{opacity:0;transform:translateY(-12px);}}
   .question{font-size:64px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
   .question .fn{color:var(--gold);margin-right:.12em;}
 
@@ -70,6 +77,15 @@
   .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-size:.62em;}
   .frac .fden{border-top:.09em solid currentColor;margin-top:.1em;padding-top:.1em;}
   .minus{margin-right:.08em;}
+
+  /* square root with vinculum */
+  .sqrt{white-space:nowrap;}
+  .sqrt .rad{
+    display:inline-block;
+    border-top:.085em solid currentColor;
+    margin-left:-.16em;
+    padding:.06em .05em 0 .12em;
+  }
   .qflash-ok{animation:okflash .3s;}
   @keyframes okflash{0%{color:var(--ok);}100%{color:var(--ink);}}
 
@@ -77,8 +93,8 @@
   .palette button{
     padding:8px 4px;border:none;border-radius:12px;
     background:var(--panel);color:var(--ink);
-    font-size:27px;font-weight:700;font-family:ui-monospace,"SF Mono",Menlo,monospace;
-    cursor:pointer;min-height:76px;
+    font-size:31px;font-weight:700;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    cursor:pointer;min-height:88px;
     display:flex;align-items:center;justify-content:center;
   }
   .palette button:active{background:var(--panel-hi);}
@@ -98,6 +114,11 @@
   .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:.1em;}
   .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:.3em;}
   .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
+  .fb .fb-pen{
+    font-size:13px;font-weight:800;color:var(--ng);
+    background:rgba(255,107,122,.12);border-radius:8px;
+    padding:6px 10px;margin-bottom:12px;letter-spacing:.05em;
+  }
   .fb svg{display:block;margin:0 auto;}
 
   /* ---------- result screen ---------- */
@@ -168,7 +189,7 @@
     </div>
 
     <button class="start-btn" id="btn-start">スタート</button>
-    <div class="rule">正解で+1。ミスすると単位円で復習タイム（その間タイマーは止まります）</div>
+    <div class="rule">正解 +100点、2秒以内なら +50点、3連続からコンボボーナス。<br>ミスは −100点＆残り時間 −3秒！</div>
   </div>
 
   <!-- ===== GAME ===== -->
@@ -179,7 +200,7 @@
     </div>
     <div class="timebar"><div class="fill" id="timefill"></div></div>
     <div class="timenum" id="timenum">60.0</div>
-    <div class="qarea"><div class="question" id="question"></div></div>
+    <div class="qarea"><div class="question" id="question"></div><div class="pop" id="pop"></div></div>
     <div class="palette" id="palette"></div>
   </div>
 
@@ -187,11 +208,12 @@
   <div class="screen" id="scr-result">
     <div class="result-head">
       <div class="big" id="r-score">0</div>
-      <div class="lab">正解数</div>
+      <div class="lab">スコア</div>
     </div>
     <div class="result-stats">
+      <div class="stat"><div class="v" id="r-correct">0</div><div class="k">正解数</div></div>
       <div class="stat"><div class="v" id="r-acc">-</div><div class="k">正答率</div></div>
-      <div class="stat"><div class="v" id="r-max">0</div><div class="k">最大連続</div></div>
+      <div class="stat"><div class="v" id="r-max">0</div><div class="k">最大コンボ</div></div>
       <div class="stat"><div class="v" id="r-miss">0</div><div class="k">ミス</div></div>
     </div>
     <div class="miss-title">間違えた問題</div>
@@ -209,6 +231,7 @@
   <div class="fb">
     <div class="fb-q" id="fb-q"></div>
     <div class="fb-a">正解は <b id="fb-a"></b></div>
+    <div class="fb-pen">−100点 ／ 残り時間 −3秒</div>
     <div id="fb-circle"></div>
   </div>
 </div>
@@ -242,7 +265,7 @@
   // ---------- state ----------
   const settings={func:"mix",unit:"deg",range:"full"};
   let time=DUR, running=false, paused=false, tick=null;
-  let score=0, missCount=0, streak=0, maxStreak=0;
+  let score=0, correctCount=0, missCount=0, streak=0, maxStreak=0, qStart=0;
   let cur=null, prevKey="";
   let misses=[];
 
@@ -265,8 +288,11 @@
   segInit("seg-unit","unit");
   segInit("seg-range","range");
 
+  function sq(s){
+    return String(s).replace(/√(\d+)/g,'<span class="sqrt">√<span class="rad">$1</span></span>');
+  }
   function frac(n,d){
-    return '<span class="frac"><span class="fnum">'+n+'</span><span class="fden">'+d+'</span></span>';
+    return '<span class="frac"><span class="fnum">'+sq(n)+'</span><span class="fden">'+sq(d)+'</span></span>';
   }
   function fmtAngle(deg,unit){
     if(unit!=="rad") return deg+"°";
@@ -285,7 +311,7 @@
       const p=s.split("/");
       html=frac(p[0],p[1]);
     }else{
-      html=s;
+      html=sq(s);
     }
     return (neg?'<span class="minus">−</span>':'')+html;
   }
@@ -308,6 +334,7 @@
     cur={f,deg:a,unit,ans:TABLE[f][a]};
     $("question").innerHTML='<span class="fn">'+f+'</span>&thinsp;'+fmtAngle(a,unit);
     buildPalette(f);
+    qStart=performance.now();
   }
 
   function buildPalette(f){
@@ -328,18 +355,36 @@
   function answer(v){
     if(!running||paused) return;
     if(v===cur.ans){
-      score++; streak++; maxStreak=Math.max(maxStreak,streak);
+      const sec=(performance.now()-qStart)/1000;
+      const fast=sec<=2.0;
+      streak++; maxStreak=Math.max(maxStreak,streak);
+      let pts=100+(fast?50:0);
+      if(streak>=3) pts+=Math.min(10*streak,100);
+      score+=pts; correctCount++;
       $("score").textContent=score;
-      $("streak").textContent = streak>=3 ? "×"+streak : "";
+      $("streak").textContent = streak>=2 ? "×"+streak : "";
+      popup("+"+pts+(fast?" ⚡":""));
       const q=$("question");
       q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
       nextQuestion();
     }else{
       missCount++; streak=0;
+      score=Math.max(0,score-100);
+      time=Math.max(0,time-3);
+      $("score").textContent=score;
       $("streak").textContent="";
+      $("timefill").style.width=(time/DUR*100)+"%";
+      $("timefill").classList.toggle("low",time<=10);
+      $("timenum").textContent=time.toFixed(1);
       misses.push({f:cur.f,deg:cur.deg,unit:cur.unit,ans:cur.ans});
       showFeedback();
     }
+  }
+
+  function popup(text){
+    const p=$("pop");
+    p.textContent=text;
+    p.classList.remove("show"); void p.offsetWidth; p.classList.add("show");
   }
 
   function showFeedback(){
@@ -391,7 +436,7 @@
 
   // ---------- timer / flow ----------
   function start(){
-    time=DUR; score=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey="";
+    time=DUR; score=0; correctCount=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey="";
     $("score").textContent="0"; $("streak").textContent="";
     running=true; paused=false;
     show("scr-game");
@@ -412,8 +457,9 @@
     running=false;
     clearInterval(tick);
     $("r-score").textContent=score;
-    const total=score+missCount;
-    $("r-acc").textContent = total? Math.round(score/total*100)+"%" : "-";
+    $("r-correct").textContent=correctCount;
+    const total=correctCount+missCount;
+    $("r-acc").textContent = total? Math.round(correctCount/total*100)+"%" : "-";
     $("r-max").textContent=maxStreak;
     $("r-miss").textContent=missCount;
     const list=$("miss-list");
