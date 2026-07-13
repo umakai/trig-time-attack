@@ -144,6 +144,15 @@
   .rank-row .hd{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .rank-row .sc{font-family:ui-monospace,Menlo,monospace;font-weight:800;flex-shrink:0;}
   .rank-row.me{background:rgba(255,201,77,.14);outline:1px solid var(--gold);}
+  .devtag{
+    font-size:10px;color:#1A1400;background:var(--gold);
+    border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:800;
+    display:inline-block;vertical-align:middle;
+  }
+  .wc-name{
+    font-size:20px;font-weight:800;color:var(--gold);
+    margin:10px 0 16px;line-height:1.4;
+  }
   .rank-sub{font-size:12px;color:var(--ink-dim);text-align:center;margin-bottom:6px;}
 
   /* my page */
@@ -181,6 +190,7 @@
   .timebar .fill{height:100%;width:100%;background:var(--gold);border-radius:99px;transition:width .1s linear;}
   .timebar .fill.low{background:var(--ng);}
   .timenum{font-size:20px;font-weight:800;color:var(--ink);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:4px;}
+  .endless{font-size:12px;color:var(--ink-dim);text-align:center;margin:2px 0 4px;letter-spacing:.04em;}
 
   .qarea{
     flex:1;display:flex;align-items:center;justify-content:center;
@@ -347,7 +357,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.7.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.9.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -360,6 +370,7 @@
     </div>
     <div class="timebar" id="timebar"><div class="fill" id="timefill"></div></div>
     <div class="timenum" id="timenum">60.0</div>
+    <div class="endless" id="endless" style="display:none">∞ エンドレス ─ 「■ 終了」でいつでも切り上げOK</div>
     <div id="pcircle"></div>
     <div class="qarea"><div class="question" id="question"></div><div class="pop" id="pop"></div></div>
     <div class="palette" id="palette"></div>
@@ -412,10 +423,28 @@
   </div>
 </div>
 
+<!-- ===== WELCOME OVERLAY (first launch) ===== -->
+<div class="overlay" id="welcome-overlay">
+  <div class="fb pausebox" style="max-width:340px">
+    <div class="pz-title" style="margin-bottom:6px">ようこそ！</div>
+    <div class="rank-sub">きみのプレイヤーネームはこちら</div>
+    <div class="wc-name" id="wc-name"></div>
+    <div class="btnrow">
+      <button class="btn-home" id="wc-reroll">🎲 引き直す</button>
+      <button class="btn-retry" id="wc-ok">これでいく！</button>
+    </div>
+    <div class="rank-sub" style="margin-top:12px">ランキングに登録するまでは、<br>マイページ（右上）でいつでも引き直せます</div>
+  </div>
+</div>
+
 <!-- ===== MY PAGE OVERLAY ===== -->
 <div class="overlay" id="mp-overlay">
   <div class="fb pausebox changelog" style="max-width:360px">
-    <div class="pz-title" style="text-align:center;margin-bottom:12px" id="mp-handle">👤</div>
+    <div class="pz-title" style="text-align:center;margin-bottom:4px" id="mp-handle">👤</div>
+    <div style="text-align:center;margin-bottom:12px">
+      <button class="rankbtn" id="btn-reroll" style="padding:7px 14px;font-size:13px">🎲 名前を引き直す</button>
+      <div class="rank-sub" id="reroll-note" style="margin-top:5px"></div>
+    </div>
     <div class="mp-badge">
       <span class="mp-emoji" id="mp-emoji">🔰</span>
       <div>
@@ -460,6 +489,10 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.9.0</b> 初回起動時に「ようこそ」画面でプレイヤーネームを決められるようになりました（納得いくまで引き直しOK）。名前のバリエーションを約3億通りに拡張。ランキングに制作者タグを追加。</p>
+    <p><b>v1.8.0</b> 名前のバリエーションを大幅拡張（約4,000万通り・番号5桁化）。マイページに「🎲 名前を引き直す」を追加——ランキングに登録するまでは何度でも引き直せます（登録後は固定）。</p>
+    <p><b>v1.7.2</b> ランキングの表示を5分間キャッシュするようにし、通信量（Firestoreの読み取り回数）を大幅に節約。キャッシュ表示中は「◯分前の情報」と表示されます。スコア登録直後は常に最新を取得します。</p>
+    <p><b>v1.7.1</b> 練習モードが無限に続けられることを、スタート画面とプレイ中の表示（∞ エンドレス）で明示しました。</p>
     <p><b>v1.7.0</b> マイページを追加（画面右上のバッジから）：累計スコアのバッジ称号（🔰→🥉→🥈→🥇→💎→👑）、自己ベストTOP5、最近のプレイ履歴。記録はすべてこの端末の中だけに保存されます。オンラインランキング稼働開始。</p>
     <p><b>v1.6.1</b> スタート画面を刷新（タブ型のモード切替・出題設定カード・ランキング常設ボタン、レイアウトシフト解消）。練習モードを改善：ミス時のペナルティ表示を撤廃し読み取りヒントを追加、単位円に有名角の参考動径（点線）を表示。</p>
     <p><b>v1.6.0</b> ランクモードのクイック選択（BASIC／ADVANCED／EXPERT）を追加。練習モードを追加：時間・スコアなしで、単位円（動径あり／白紙を選択可）を見ながら演習できます。</p>
@@ -580,7 +613,7 @@
     $("chips-wrap").style.display = prac ? "none" : "";
     $("best-view").style.display = prac ? "none" : "";
     $("rule-text").innerHTML = prac
-      ? "時間・スコアなし。<b>単位円</b>を見ながらじっくり練習。<br>ミスすると<b>図解つき</b>で正解を確認できます。"
+      ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。"
       : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！";
     if(prac){ clearChips(); }
   }
@@ -828,6 +861,7 @@
     $("score").textContent="0"; $("streak").textContent="";
     $("timebar").style.display = prac ? "none" : "";
     $("timenum").style.display = prac ? "none" : "";
+    $("endless").style.display = prac ? "" : "none";
     $("pcircle").style.display = prac ? "flex" : "none";
     $("btn-pause").textContent = prac ? "■ 終了" : "⏸ 中断";
     if(prac) updPracCounts();
@@ -933,10 +967,20 @@
   });
 
   // ---------- ranking ----------
-  const ADJ=["すばやい","冷静な","華麗な","電光の","不屈の","精密な","軽やかな","大胆な","知的な","俊敏な","堅実な","静かなる"];
-  const NOUN=["余弦","正弦","正接","単位円","動径","弧度","象限","周期","振幅","偏角","漸近線","加法定理"];
+  const ADJ=["すばやい","冷静な","華麗な","電光の","不屈の","精密な","軽やかな","大胆な","知的な","俊敏な",
+             "堅実な","静かなる","神速の","優雅な","閃光の","豪快な","緻密な","鮮烈な","不動の","無双の",
+             "疾風の","雷鳴の","流星の","銀河の","灼熱の","氷結の","紺碧の","黄金の","白銀の","深紅の",
+             "漆黒の","純白の","悠久の","刹那の","究極の","伝説の","幻の","天才的な","職人の","王者の",
+             "挑戦者の","目覚めし","眠れる","覚醒した","音速の","光速の","完全無欠の","ひらめきの"];
+  const NOUN=["余弦","正弦","正接","単位円","動径","弧度","象限","周期","振幅","偏角",
+              "漸近線","加法定理","ラジアン","黄金比","素数","虚数","ベクトル","極限","絶対値","対称軸",
+              "放物線","双曲線","楕円","接線","法線","焦点","頂点","判別式","因数分解","平方根",
+              "指数","対数","数列","等差数列","等比数列","階乗","順列","組合せ","確率","期待値",
+              "中央値","平均値","行列","内積","外積","複素数","実数","整数","有理数","無理数",
+              "円周率","微分","積分","収束","恒等式","不等式","原点","傾き","定義域","値域",
+              "外心","重心","相似","帰納法"];
   function genHandle(){
-    const n=String(Math.floor(Math.random()*10000)).padStart(4,"0");
+    const n=String(Math.floor(Math.random()*100000)).padStart(5,"0");
     return ADJ[Math.floor(Math.random()*ADJ.length)]+NOUN[Math.floor(Math.random()*NOUN.length)]+"#"+n;
   }
   function getHandle(){
@@ -946,6 +990,7 @@
       return h;
     }catch(e){ return genHandle(); }
   }
+  const DEV_UIDS=["5bGbHCNruUgZHcix2IU6j5X26W62"];   // developer's anonymous auth uid
   function renderRanking(rows,myUid){
     const list=$("rank-list");
     if(!rows.length){ list.innerHTML='<div class="rank-sub" style="padding:16px 0">まだ記録がありません。一番乗りのチャンス！</div>'; return; }
@@ -954,24 +999,51 @@
       const d=document.createElement("div");
       d.className="rank-row"+(i<3?" top3":"")+(myUid&&r.uid===myUid?" me":"");
       d.innerHTML='<span class="pos">'+(i+1)+'</span><span class="hd"></span><span class="sc">'+Number(r.score)+'</span>';
-      d.querySelector(".hd").textContent=r.handle||"？？？";   // textContent: never render stored strings as HTML
+      const hd=d.querySelector(".hd");
+      hd.textContent=r.handle||"？？？";   // textContent: never render stored strings as HTML
+      if(DEV_UIDS.includes(r.uid)){
+        const tag=document.createElement("span");
+        tag.className="devtag";
+        tag.textContent="制作者";
+        hd.appendChild(tag);
+      }
       list.appendChild(d);
     });
   }
   let rankKey="mix-deg-q1";
+  const RANK_TTL=5*60*1000;   // cache rankings for 5 min to save Firestore reads
+  function loadRankCache(){
+    try{ return JSON.parse(localStorage.getItem("tta-rankcache")||"{}"); }catch(e){ return {}; }
+  }
+  function saveRankCache(c){
+    try{ localStorage.setItem("tta-rankcache",JSON.stringify(c)); }catch(e){}
+  }
+  function invalidateRankCache(key){
+    const c=loadRankCache(); delete c[key]; saveRankCache(c);
+  }
   async function openRanking(key){
     if(typeof key==="string" && RANKED[key]) rankKey=key;
     else if(RANKED[skey()]) rankKey=skey();
     document.querySelectorAll("#rank-tabs button").forEach(b=>b.classList.toggle("sel",b.dataset.k===rankKey));
+    $("rank-overlay").classList.add("show");
+    // serve from cache if fresh
+    const cache=loadRankCache(), ent=cache[rankKey];
+    if(ent && Date.now()-ent.t<RANK_TTL){
+      const ageMin=Math.max(1,Math.round((Date.now()-ent.t)/60000));
+      $("rank-mode").textContent=RANKED[rankKey]+"（"+ageMin+"分前の情報）";
+      renderRanking(ent.rows, window.LB && window.LB.enabled ? window.LB.uid() : null);
+      return;
+    }
     $("rank-mode").textContent=RANKED[rankKey];
     $("rank-list").textContent="読み込み中…";
-    $("rank-overlay").classList.add("show");
     if(!window.LB || !window.LB.enabled){
       $("rank-list").innerHTML='<div class="rank-sub" style="padding:16px 0">ランキング機能は準備中です</div>';
       return;
     }
     try{
       const rows=await window.LB.fetchTop(rankKey);
+      cache[rankKey]={t:Date.now(),rows};
+      saveRankCache(cache);
       renderRanking(rows, window.LB.uid());
     }catch(e){
       $("rank-list").innerHTML='<div class="rank-sub" style="padding:16px 0">通信エラーが発生しました。時間をおいて再度お試しください。</div>';
@@ -998,6 +1070,7 @@
     try{
       await window.LB.submit(k, score, getHandle());
       btn.style.display="none";
+      invalidateRankCache(k);   // show the fresh board including the new entry
       openRanking(k);
     }catch(e){
       alert("登録に失敗しました。通信環境を確認してください。");
@@ -1054,9 +1127,27 @@
       el.appendChild(d);
     });
   }
+  function handleLocked(){
+    try{ return !!localStorage.getItem("tta-consent"); }catch(e){ return false; }
+  }
+  function refreshRerollUI(){
+    const locked=handleLocked();
+    const btn=$("btn-reroll");
+    btn.disabled=locked;
+    btn.style.opacity = locked ? ".4" : "1";
+    $("reroll-note").textContent = locked
+      ? "ランキング登録済みのため、この名前で固定されています"
+      : "ランキングに一度登録すると変更できなくなります";
+  }
+  $("btn-reroll").addEventListener("click",()=>{
+    if(handleLocked()) return;
+    try{ localStorage.setItem("tta-handle",genHandle()); }catch(e){}
+    $("mp-handle").textContent="👤 "+getHandle();
+  });
   function openMyPage(){
     const st=loadStats();
     $("mp-handle").textContent="👤 "+getHandle();
+    refreshRerollUI();
     const bi=badgeOf(st.total);
     $("mp-emoji").textContent=BADGES[bi][2];
     $("mp-bname").textContent=BADGES[bi][1];
@@ -1082,6 +1173,21 @@
   $("btn-mypage").addEventListener("click",openMyPage);
   $("btn-mp-close").addEventListener("click",()=>$("mp-overlay").classList.remove("show"));
   updateMyBtn();
+
+  // ---------- first-launch welcome (name decision) ----------
+  (function(){
+    let has=false;
+    try{ has=!!localStorage.getItem("tta-handle"); }catch(e){ return; }
+    if(has) return;                       // existing player: skip
+    getHandle();                          // generate & store the first candidate
+    $("wc-name").textContent=getHandle();
+    $("welcome-overlay").classList.add("show");
+  })();
+  $("wc-reroll").addEventListener("click",()=>{
+    try{ localStorage.setItem("tta-handle",genHandle()); }catch(e){}
+    $("wc-name").textContent=getHandle();
+  });
+  $("wc-ok").addEventListener("click",()=>$("welcome-overlay").classList.remove("show"));
 
   // ---------- changelog ----------
   $("btn-ver").addEventListener("click",()=>$("ver-overlay").classList.add("show"));
