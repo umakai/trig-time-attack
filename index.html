@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>三角比タイムアタック</title>
+<style>
+  :root{
+    --bg:#14162B;
+    --panel:#1F2240;
+    --panel-hi:#2A2E55;
+    --ink:#EDEFFF;
+    --ink-dim:#8B90B8;
+    --gold:#FFC94D;
+    --ok:#4ADE80;
+    --ng:#FF6B7A;
+    --radius:14px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+    display:flex;justify-content:center;
+    min-height:100dvh;
+  }
+  .app{width:100%;max-width:440px;padding:20px 16px;display:flex;flex-direction:column;min-height:100dvh;}
+  .screen{display:none;flex-direction:column;flex:1;}
+  .screen.active{display:flex;}
+
+  /* ---------- start screen ---------- */
+  .title{font-size:26px;font-weight:800;letter-spacing:.04em;margin:12px 0 2px;}
+  .title .num{color:var(--gold);font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:24px;}
+  .setting{margin-bottom:18px;}
+  .setting-label{font-size:12px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;}
+  .seg{display:flex;gap:6px;}
+  .seg button{
+    flex:1;padding:11px 4px;border:none;border-radius:10px;
+    background:var(--panel);color:var(--ink-dim);
+    font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;
+  }
+  .seg button.sel{background:var(--gold);color:#1A1400;}
+  .start-btn{
+    margin-top:auto;padding:18px;border:none;border-radius:var(--radius);
+    background:var(--gold);color:#1A1400;font-size:18px;font-weight:800;
+    font-family:inherit;cursor:pointer;letter-spacing:.06em;
+  }
+  .start-btn:active{transform:scale(.98);}
+  .rule{color:var(--ink-dim);font-size:12px;text-align:center;margin-top:12px;}
+
+  /* ---------- game screen ---------- */
+  .hud{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .hud .score{font-size:20px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
+  .hud .streak{font-size:13px;color:var(--gold);font-weight:700;min-width:52px;text-align:right;}
+  .timebar{height:8px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:6px;}
+  .timebar .fill{height:100%;width:100%;background:var(--gold);border-radius:99px;transition:width .1s linear;}
+  .timebar .fill.low{background:var(--ng);}
+  .timenum{font-size:12px;color:var(--ink-dim);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:4px;}
+
+  .qarea{
+    flex:1;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--radius);position:relative;min-height:150px;
+  }
+  .question{font-size:52px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
+  .question .fn{color:var(--gold);margin-right:.12em;}
+
+  /* vertical fractions */
+  .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-size:.58em;}
+  .frac .fden{border-top:.09em solid currentColor;margin-top:.1em;padding-top:.1em;}
+  .minus{margin-right:.08em;}
+  .qflash-ok{animation:okflash .3s;}
+  @keyframes okflash{0%{color:var(--ok);}100%{color:var(--ink);}}
+
+  .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+  .palette button{
+    padding:8px 4px;border:none;border-radius:12px;
+    background:var(--panel);color:var(--ink);
+    font-size:20px;font-weight:700;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    cursor:pointer;min-height:62px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .palette button:active{background:var(--panel-hi);}
+  .palette button.small{font-size:15px;font-family:inherit;}
+
+  /* ---------- feedback overlay ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,11,22,.9);
+    display:none;align-items:center;justify-content:center;z-index:10;
+  }
+  .overlay.show{display:flex;}
+  .fb{
+    background:var(--panel);border-radius:18px;padding:22px 26px;
+    text-align:center;max-width:320px;width:88%;
+    border:1px solid var(--ng);
+  }
+  .fb .fb-q{font-size:26px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:.1em;}
+  .fb .fb-a{font-size:15px;color:var(--ng);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:.3em;}
+  .fb .fb-a b{font-size:22px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
+  .fb svg{display:block;margin:0 auto;}
+
+  /* ---------- result screen ---------- */
+  .result-head{text-align:center;margin:30px 0 20px;}
+  .result-head .big{font-size:64px;font-weight:800;font-family:ui-monospace,Menlo,monospace;color:var(--gold);}
+  .result-head .lab{color:var(--ink-dim);font-size:13px;letter-spacing:.15em;}
+  .result-stats{display:flex;gap:8px;margin-bottom:20px;}
+  .stat{flex:1;background:var(--panel);border-radius:12px;padding:12px;text-align:center;}
+  .stat .v{font-size:22px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
+  .stat .k{font-size:11px;color:var(--ink-dim);margin-top:2px;}
+  .miss-title{font-size:13px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;}
+  .miss-list{overflow-y:auto;flex:1;min-height:0;}
+  .miss-item{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--panel);border-radius:10px;padding:10px 14px;margin-bottom:6px;
+    font-family:ui-monospace,Menlo,monospace;font-size:17px;font-weight:700;
+  }
+  .miss-item>span{display:inline-flex;align-items:center;gap:.1em;}
+  .miss-item .ans{color:var(--ok);}
+  .nomiss{color:var(--ok);font-weight:700;text-align:center;padding:20px 0;}
+  .btnrow{display:flex;gap:8px;margin-top:14px;}
+  .btnrow button{
+    flex:1;padding:15px;border:none;border-radius:var(--radius);
+    font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
+  }
+  .btn-retry{background:var(--gold);color:#1A1400;}
+  .btn-home{background:var(--panel);color:var(--ink);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== START ===== -->
+  <div class="screen active" id="scr-start">
+    <div class="title">三角比 <span class="num">60</span>秒タイムアタック</div>
+    <div class="subtitle">有名角の値を、見た瞬間に。</div>
+
+    <div class="setting">
+      <div class="setting-label">関数</div>
+      <div class="seg" id="seg-func">
+        <button data-v="sin">sin</button>
+        <button data-v="cos">cos</button>
+        <button data-v="tan">tan</button>
+        <button data-v="mix" class="sel">ミックス</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">角度の表し方</div>
+      <div class="seg" id="seg-unit">
+        <button data-v="deg" class="sel">度数法</button>
+        <button data-v="rad">弧度法</button>
+        <button data-v="mix">ミックス</button>
+      </div>
+    </div>
+
+    <div class="setting">
+      <div class="setting-label">範囲</div>
+      <div class="seg" id="seg-range">
+        <button data-v="q1">0°〜90°</button>
+        <button data-v="full" class="sel">0°〜360°</button>
+      </div>
+    </div>
+
+    <button class="start-btn" id="btn-start">スタート</button>
+    <div class="rule">正解で+1。ミスすると単位円で復習タイム（その間タイマーは止まります）</div>
+  </div>
+
+  <!-- ===== GAME ===== -->
+  <div class="screen" id="scr-game">
+    <div class="hud">
+      <div class="score" id="score">0</div>
+      <div class="streak" id="streak"></div>
+    </div>
+    <div class="timebar"><div class="fill" id="timefill"></div></div>
+    <div class="timenum" id="timenum">60.0</div>
+    <div class="qarea"><div class="question" id="question"></div></div>
+    <div class="palette" id="palette"></div>
+  </div>
+
+  <!-- ===== RESULT ===== -->
+  <div class="screen" id="scr-result">
+    <div class="result-head">
+      <div class="big" id="r-score">0</div>
+      <div class="lab">正解数</div>
+    </div>
+    <div class="result-stats">
+      <div class="stat"><div class="v" id="r-acc">-</div><div class="k">正答率</div></div>
+      <div class="stat"><div class="v" id="r-max">0</div><div class="k">最大連続</div></div>
+      <div class="stat"><div class="v" id="r-miss">0</div><div class="k">ミス</div></div>
+    </div>
+    <div class="miss-title">間違えた問題</div>
+    <div class="miss-list" id="miss-list"></div>
+    <div class="btnrow">
+      <button class="btn-home" id="btn-home">設定に戻る</button>
+      <button class="btn-retry" id="btn-retry">もう一度</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== WRONG-ANSWER OVERLAY ===== -->
+<div class="overlay" id="overlay">
+  <div class="fb">
+    <div class="fb-q" id="fb-q"></div>
+    <div class="fb-a">正解は <b id="fb-a"></b></div>
+    <div id="fb-circle"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- data ----------
+  const ANGLES_FULL=[0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330];
+  const ANGLES_Q1=[0,30,45,60,90];
+  const RAD={0:"0",30:"π/6",45:"π/4",60:"π/3",90:"π/2",120:"2π/3",135:"3π/4",150:"5π/6",
+    180:"π",210:"7π/6",225:"5π/4",240:"4π/3",270:"3π/2",300:"5π/3",315:"7π/4",330:"11π/6"};
+
+  const SIN={0:"0",30:"1/2",45:"1/√2",60:"√3/2",90:"1",120:"√3/2",135:"1/√2",150:"1/2",
+    180:"0",210:"-1/2",225:"-1/√2",240:"-√3/2",270:"-1",300:"-√3/2",315:"-1/√2",330:"-1/2"};
+  const COS={0:"1",30:"√3/2",45:"1/√2",60:"1/2",90:"0",120:"-1/2",135:"-1/√2",150:"-√3/2",
+    180:"-1",210:"-√3/2",225:"-1/√2",240:"-1/2",270:"0",300:"1/2",315:"1/√2",330:"√3/2"};
+  const TAN={0:"0",30:"1/√3",45:"1",60:"√3",90:"none",120:"-√3",135:"-1",150:"-1/√3",
+    180:"0",210:"1/√3",225:"1",240:"√3",270:"none",300:"-√3",315:"-1",330:"-1/√3"};
+  const TABLE={sin:SIN,cos:COS,tan:TAN};
+
+  const PAL_SC=["-1","-√3/2","-1/√2","-1/2","0","1/2","1/√2","√3/2","1"];
+  const PAL_SC_Q1=["0","1/2","1/√2","√3/2","1"];
+  const PAL_T=["-√3","-1","-1/√3","0","1/√3","1","√3","none"];
+  const PAL_T_Q1=["0","1/√3","1","√3","none"];
+
+  const DUR=60.0;      // seconds
+  const FB_MS=1800;    // wrong-answer review time
+
+  // ---------- state ----------
+  const settings={func:"mix",unit:"deg",range:"full"};
+  let time=DUR, running=false, paused=false, tick=null;
+  let score=0, missCount=0, streak=0, maxStreak=0;
+  let cur=null, prevKey="";
+  let misses=[];
+
+  // ---------- helpers ----------
+  const $=id=>document.getElementById(id);
+  function show(id){
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    $(id).classList.add("active");
+  }
+  function segInit(id,key){
+    $(id).querySelectorAll("button").forEach(b=>{
+      b.addEventListener("click",()=>{
+        $(id).querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
+        b.classList.add("sel");
+        settings[key]=b.dataset.v;
+      });
+    });
+  }
+  segInit("seg-func","func");
+  segInit("seg-unit","unit");
+  segInit("seg-range","range");
+
+  function frac(n,d){
+    return '<span class="frac"><span class="fnum">'+n+'</span><span class="fden">'+d+'</span></span>';
+  }
+  function fmtAngle(deg,unit){
+    if(unit!=="rad") return deg+"°";
+    const s=RAD[deg];
+    if(!s.includes("/")) return s;
+    const p=s.split("/");
+    return frac(p[0],p[1]);
+  }
+  function fmtVal(v){
+    if(v==="none") return "定義なし";
+    const neg=v.startsWith("-");
+    const s=neg?v.slice(1):v;
+    let html;
+    if(s.includes("/")){
+      const p=s.split("/");
+      html=frac(p[0],p[1]);
+    }else{
+      html=s;
+    }
+    return (neg?'<span class="minus">−</span>':'')+html;
+  }
+
+  // ---------- question ----------
+  function nextQuestion(){
+    const funcs = settings.func==="mix" ? ["sin","cos","tan"] : [settings.func];
+    const angles = settings.range==="q1" ? ANGLES_Q1 : ANGLES_FULL;
+    let f,a,key,guard=0;
+    do{
+      f=funcs[Math.floor(Math.random()*funcs.length)];
+      a=angles[Math.floor(Math.random()*angles.length)];
+      key=f+a;
+      guard++;
+    }while(key===prevKey && guard<20);
+    prevKey=key;
+    const unit = settings.unit==="mix" ? (Math.random()<0.5?"deg":"rad") : settings.unit;
+    cur={f,deg:a,unit,ans:TABLE[f][a]};
+    $("question").innerHTML='<span class="fn">'+f+'</span>&thinsp;'+fmtAngle(a,unit);
+    buildPalette(f);
+  }
+
+  function buildPalette(f){
+    const q1 = settings.range==="q1";
+    const vals = f==="tan" ? (q1?PAL_T_Q1:PAL_T) : (q1?PAL_SC_Q1:PAL_SC);
+    const pal=$("palette");
+    pal.innerHTML="";
+    vals.forEach(v=>{
+      const b=document.createElement("button");
+      b.innerHTML=fmtVal(v);
+      if(v==="none") b.classList.add("small");
+      b.addEventListener("click",()=>answer(v));
+      pal.appendChild(b);
+    });
+  }
+
+  // ---------- answer ----------
+  function answer(v){
+    if(!running||paused) return;
+    if(v===cur.ans){
+      score++; streak++; maxStreak=Math.max(maxStreak,streak);
+      $("score").textContent=score;
+      $("streak").textContent = streak>=3 ? "×"+streak : "";
+      const q=$("question");
+      q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
+      nextQuestion();
+    }else{
+      missCount++; streak=0;
+      $("streak").textContent="";
+      misses.push({f:cur.f,deg:cur.deg,unit:cur.unit,ans:cur.ans});
+      showFeedback();
+    }
+  }
+
+  function showFeedback(){
+    paused=true;
+    $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
+    $("fb-a").innerHTML=fmtVal(cur.ans);
+    $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
+    $("overlay").classList.add("show");
+    setTimeout(()=>{
+      $("overlay").classList.remove("show");
+      paused=false;
+      nextQuestion();
+    },FB_MS);
+  }
+
+  // ---------- unit circle SVG ----------
+  function circleSVG(f,deg){
+    const S=200,c=S/2,r=76;
+    const th=deg*Math.PI/180;
+    const px=c+r*Math.cos(th), py=c-r*Math.sin(th);
+    let extra="";
+    if(f==="sin"){
+      extra='<line x1="'+px+'" y1="'+py+'" x2="'+px+'" y2="'+c+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>';
+    }else if(f==="cos"){
+      extra='<line x1="'+px+'" y1="'+c+'" x2="'+c+'" y2="'+c+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
+           +'<line x1="'+px+'" y1="'+py+'" x2="'+px+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
+    }else{
+      // tan: extend ray to x=1 line (if defined)
+      extra='<line x1="'+(c+r)+'" y1="'+(c-r*1.15)+'" x2="'+(c+r)+'" y2="'+(c+r*1.15)+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
+      const cosv=Math.cos(th);
+      if(Math.abs(cosv)>0.001){
+        const t=Math.tan(th), ty=c-r*t;
+        const clTy=Math.max(c-r*1.15,Math.min(c+r*1.15,ty));
+        if(ty===clTy){
+          extra+='<line x1="'+(c+r)+'" y1="'+c+'" x2="'+(c+r)+'" y2="'+ty+'" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
+               +'<line x1="'+c+'" y1="'+c+'" x2="'+(c+(cosv>0?r:-r))+'" y2="'+(c-(cosv>0?r:-r)*Math.tan(th))+'" stroke="var(--ink-dim)" stroke-width="1.5" stroke-dasharray="3 3"/>';
+        }
+      }
+    }
+    return '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'">'
+      +'<line x1="8" y1="'+c+'" x2="'+(S-8)+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1"/>'
+      +'<line x1="'+c+'" y1="8" x2="'+c+'" y2="'+(S-8)+'" stroke="var(--ink-dim)" stroke-width="1"/>'
+      +'<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="var(--ink)" stroke-width="1.5"/>'
+      +extra
+      +'<line x1="'+c+'" y1="'+c+'" x2="'+px+'" y2="'+py+'" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>'
+      +'<circle cx="'+px+'" cy="'+py+'" r="5" fill="var(--gold)"/>'
+      +'</svg>';
+  }
+
+  // ---------- timer / flow ----------
+  function start(){
+    time=DUR; score=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey="";
+    $("score").textContent="0"; $("streak").textContent="";
+    running=true; paused=false;
+    show("scr-game");
+    nextQuestion();
+    clearInterval(tick);
+    tick=setInterval(()=>{
+      if(!running||paused) return;
+      time-=0.1;
+      if(time<=0){ time=0; finish(); }
+      const fill=$("timefill");
+      fill.style.width=(time/DUR*100)+"%";
+      fill.classList.toggle("low",time<=10);
+      $("timenum").textContent=time.toFixed(1);
+    },100);
+  }
+
+  function finish(){
+    running=false;
+    clearInterval(tick);
+    $("r-score").textContent=score;
+    const total=score+missCount;
+    $("r-acc").textContent = total? Math.round(score/total*100)+"%" : "-";
+    $("r-max").textContent=maxStreak;
+    $("r-miss").textContent=missCount;
+    const list=$("miss-list");
+    list.innerHTML="";
+    if(misses.length===0){
+      list.innerHTML='<div class="nomiss">ノーミス！</div>';
+    }else{
+      const seen=new Set();
+      misses.forEach(m=>{
+        const k=m.f+m.deg;
+        if(seen.has(k)) return;
+        seen.add(k);
+        const d=document.createElement("div");
+        d.className="miss-item";
+        d.innerHTML='<span><span style="color:var(--gold)">'+m.f+'</span>&thinsp;'+fmtAngle(m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
+        list.appendChild(d);
+      });
+    }
+    show("scr-result");
+  }
+
+  $("btn-start").addEventListener("click",start);
+  $("btn-retry").addEventListener("click",start);
+  $("btn-home").addEventListener("click",()=>show("scr-start"));
+})();
+</script>
+</body>
+</html>
