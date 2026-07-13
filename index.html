@@ -63,11 +63,11 @@
     flex:1;display:flex;align-items:center;justify-content:center;
     border-radius:var(--radius);position:relative;min-height:150px;
   }
-  .question{font-size:52px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
+  .question{font-size:64px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
   .question .fn{color:var(--gold);margin-right:.12em;}
 
   /* vertical fractions */
-  .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-size:.58em;}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-size:.62em;}
   .frac .fden{border-top:.09em solid currentColor;margin-top:.1em;padding-top:.1em;}
   .minus{margin-right:.08em;}
   .qflash-ok{animation:okflash .3s;}
@@ -77,8 +77,8 @@
   .palette button{
     padding:8px 4px;border:none;border-radius:12px;
     background:var(--panel);color:var(--ink);
-    font-size:20px;font-weight:700;font-family:ui-monospace,"SF Mono",Menlo,monospace;
-    cursor:pointer;min-height:62px;
+    font-size:27px;font-weight:700;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    cursor:pointer;min-height:76px;
     display:flex;align-items:center;justify-content:center;
   }
   .palette button:active{background:var(--panel-hi);}
@@ -95,9 +95,9 @@
     text-align:center;max-width:320px;width:88%;
     border:1px solid var(--ng);
   }
-  .fb .fb-q{font-size:26px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:.1em;}
-  .fb .fb-a{font-size:15px;color:var(--ng);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:.3em;}
-  .fb .fb-a b{font-size:22px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
+  .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:.1em;}
+  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:.3em;}
+  .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
   .fb svg{display:block;margin:0 auto;}
 
   /* ---------- result screen ---------- */
@@ -162,6 +162,7 @@
       <div class="setting-label">範囲</div>
       <div class="seg" id="seg-range">
         <button data-v="q1">0°〜90°</button>
+        <button data-v="half">0°〜180°</button>
         <button data-v="full" class="sel">0°〜360°</button>
       </div>
     </div>
@@ -216,9 +217,11 @@
 (function(){
   // ---------- data ----------
   const ANGLES_FULL=[0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330];
+  const ANGLES_HALF=[0,30,45,60,90,120,135,150,180];
   const ANGLES_Q1=[0,30,45,60,90];
-  const RAD={0:"0",30:"π/6",45:"π/4",60:"π/3",90:"π/2",120:"2π/3",135:"3π/4",150:"5π/6",
-    180:"π",210:"7π/6",225:"5π/4",240:"4π/3",270:"3π/2",300:"5π/3",315:"7π/4",330:"11π/6"};
+  // radians as [numerator, denominator] of (n/d)π
+  const RADF={0:[0,1],30:[1,6],45:[1,4],60:[1,3],90:[1,2],120:[2,3],135:[3,4],150:[5,6],
+    180:[1,1],210:[7,6],225:[5,4],240:[4,3],270:[3,2],300:[5,3],315:[7,4],330:[11,6]};
 
   const SIN={0:"0",30:"1/2",45:"1/√2",60:"√3/2",90:"1",120:"√3/2",135:"1/√2",150:"1/2",
     180:"0",210:"-1/2",225:"-1/√2",240:"-√3/2",270:"-1",300:"-√3/2",315:"-1/√2",330:"-1/2"};
@@ -267,10 +270,11 @@
   }
   function fmtAngle(deg,unit){
     if(unit!=="rad") return deg+"°";
-    const s=RAD[deg];
-    if(!s.includes("/")) return s;
-    const p=s.split("/");
-    return frac(p[0],p[1]);
+    const nd=RADF[deg], n=nd[0], d=nd[1];
+    if(n===0) return "0";
+    if(d===1) return n===1 ? "π" : n+"π";
+    if(n===1) return frac("π",d);
+    return frac(n,d)+"π";
   }
   function fmtVal(v){
     if(v==="none") return "定義なし";
@@ -289,7 +293,9 @@
   // ---------- question ----------
   function nextQuestion(){
     const funcs = settings.func==="mix" ? ["sin","cos","tan"] : [settings.func];
-    const angles = settings.range==="q1" ? ANGLES_Q1 : ANGLES_FULL;
+    const angles = settings.range==="q1" ? ANGLES_Q1
+                 : settings.range==="half" ? ANGLES_HALF
+                 : ANGLES_FULL;
     let f,a,key,guard=0;
     do{
       f=funcs[Math.floor(Math.random()*funcs.length)];
