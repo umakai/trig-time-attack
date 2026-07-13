@@ -32,7 +32,8 @@
   /* ---------- start screen ---------- */
   .title{font-size:26px;font-weight:800;letter-spacing:.04em;margin:12px 0 2px;}
   .title .num{color:var(--gold);font-family:ui-monospace,"SF Mono",Menlo,monospace;}
-  .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:24px;}
+  .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:6px;}
+  .bestline{color:var(--gold);font-size:14px;font-weight:700;margin-bottom:20px;min-height:18px;font-family:ui-monospace,Menlo,monospace;}
   .setting{margin-bottom:18px;}
   .setting-label{font-size:12px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;}
   .seg{display:flex;gap:6px;}
@@ -133,6 +134,8 @@
   .result-head{text-align:center;margin:30px 0 20px;}
   .result-head .big{font-size:64px;font-weight:800;font-family:ui-monospace,Menlo,monospace;color:var(--gold);}
   .result-head .lab{color:var(--ink-dim);font-size:13px;letter-spacing:.15em;}
+  .result-head .newrec{color:var(--gold);font-weight:800;font-size:16px;margin-top:8px;}
+  .result-head .bestnow{color:var(--ink-dim);font-size:13px;margin-top:4px;font-family:ui-monospace,Menlo,monospace;}
   .result-stats{display:flex;gap:8px;margin-bottom:20px;}
   .stat{flex:1;background:var(--panel);border-radius:12px;padding:12px;text-align:center;}
   .stat .v{font-size:22px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
@@ -167,6 +170,7 @@
   <div class="screen active" id="scr-start">
     <div class="title">三角比 <span class="num">60</span>秒タイムアタック</div>
     <div class="subtitle">有名角の値を、見た瞬間に。</div>
+    <div class="bestline" id="best-view"></div>
 
     <div class="setting">
       <div class="setting-label">関数</div>
@@ -218,6 +222,8 @@
     <div class="result-head">
       <div class="big" id="r-score">0</div>
       <div class="lab">スコア</div>
+      <div class="newrec" id="r-new" style="display:none">🏆 ベスト更新！</div>
+      <div class="bestnow" id="r-best"></div>
     </div>
     <div class="result-stats">
       <div class="stat"><div class="v" id="r-correct">0</div><div class="k">正解数</div></div>
@@ -290,6 +296,21 @@
   let cur=null, prevKey="";
   let misses=[];
 
+  // ---------- best score (per device, per mode) ----------
+  function skey(){ return settings.func+"-"+settings.unit+"-"+settings.range; }
+  function loadBests(){
+    try{ return JSON.parse(localStorage.getItem("tta-best")||"{}"); }
+    catch(e){ return {}; }
+  }
+  function saveBests(obj){
+    try{ localStorage.setItem("tta-best",JSON.stringify(obj)); }
+    catch(e){ /* private browsing etc. — silently skip */ }
+  }
+  function updateBestView(){
+    const b=loadBests()[skey()];
+    $("best-view").textContent = (b!==undefined) ? "このモードのベスト "+b : "";
+  }
+
   // ---------- helpers ----------
   const $=id=>document.getElementById(id);
   function show(id){
@@ -302,12 +323,14 @@
         $(id).querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
         b.classList.add("sel");
         settings[key]=b.dataset.v;
+        updateBestView();
       });
     });
   }
   segInit("seg-func","func");
   segInit("seg-unit","unit");
   segInit("seg-range","range");
+  updateBestView();
 
   function sq(s){
     return String(s).replace(/√(\d+)/g,'<span class="sqrt">√<span class="rad">$1</span></span>');
@@ -485,6 +508,14 @@
   function finish(){
     running=false;
     clearInterval(tick);
+    // best score check
+    const bests=loadBests(), k=skey(), prev=bests[k];
+    const isNew = (prev===undefined) ? score>0 : score>prev;
+    if(isNew){ bests[k]=score; saveBests(bests); }
+    $("r-new").style.display = isNew ? "" : "none";
+    const bestNow = isNew ? score : (prev!==undefined ? prev : score);
+    $("r-best").textContent = "このモードのベスト "+bestNow;
+    updateBestView();
     $("r-score").textContent=score;
     $("r-correct").textContent=correctCount;
     const total=correctCount+missCount;
