@@ -144,6 +144,11 @@
   .rank-row .hd{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .rank-row .sc{font-family:ui-monospace,Menlo,monospace;font-weight:800;flex-shrink:0;}
   .rank-row.me{background:rgba(255,201,77,.14);outline:1px solid var(--gold);}
+  .rank-row.hall{
+    background:rgba(255,201,77,.08);
+    outline:1px dashed var(--gold);
+    margin-bottom:8px;
+  }
   .devtag{
     font-size:10px;color:#1A1400;background:var(--gold);
     border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:800;
@@ -995,18 +1000,30 @@
     const list=$("rank-list");
     if(!rows.length){ list.innerHTML='<div class="rank-sub" style="padding:16px 0">まだ記録がありません。一番乗りのチャンス！</div>'; return; }
     list.innerHTML="";
-    rows.forEach((r,i)=>{
+    const halls=rows.filter(r=>DEV_UIDS.includes(r.uid));
+    const players=rows.filter(r=>!DEV_UIDS.includes(r.uid));
+    // hall of fame: teacher's record sits above the ranking, outside the numbering
+    halls.forEach(r=>{
+      const d=document.createElement("div");
+      d.className="rank-row hall";
+      d.innerHTML='<span class="pos">👑</span><span class="hd"></span><span class="sc">'+Number(r.score)+'</span>';
+      const hd=d.querySelector(".hd");
+      hd.textContent=r.handle||"？？？";
+      const tag=document.createElement("span");
+      tag.className="devtag";
+      tag.textContent="講師記録";
+      hd.appendChild(tag);
+      list.appendChild(d);
+    });
+    if(!players.length){
+      list.innerHTML+='<div class="rank-sub" style="padding:12px 0">1位の席は空いています。先生を超えろ！</div>';
+      return;
+    }
+    players.forEach((r,i)=>{
       const d=document.createElement("div");
       d.className="rank-row"+(i<3?" top3":"")+(myUid&&r.uid===myUid?" me":"");
       d.innerHTML='<span class="pos">'+(i+1)+'</span><span class="hd"></span><span class="sc">'+Number(r.score)+'</span>';
-      const hd=d.querySelector(".hd");
-      hd.textContent=r.handle||"？？？";   // textContent: never render stored strings as HTML
-      if(DEV_UIDS.includes(r.uid)){
-        const tag=document.createElement("span");
-        tag.className="devtag";
-        tag.textContent="制作者";
-        hd.appendChild(tag);
-      }
+      d.querySelector(".hd").textContent=r.handle||"？？？";   // textContent: never render stored strings as HTML
       list.appendChild(d);
     });
   }
