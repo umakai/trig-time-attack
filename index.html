@@ -357,7 +357,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.10.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.0.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -493,13 +493,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
-    <p><b>v1.10.0</b> 平均回答時間を記録するようになりました！結果画面に毎回表示され、マイページでは推移が折れ線グラフで見られます。</p>
-    <p><b>v1.9.0</b> はじめてのプレイ時に名前を選べるようになりました。名前の種類も大幅に増加！マイページでは名前の引き直しもできます（ランキング登録までは何度でもOK）。</p>
-    <p><b>v1.7.0</b> マイページ登場（画面右上のバッジから）：バッジ称号（🔰→👑）・自己ベストTOP5・プレイ履歴。オンラインランキングも稼働開始！</p>
-    <p><b>v1.6.0</b> ランクモード（BASIC／ADVANCED／EXPERT）と、単位円を見ながら時間無制限で取り組める練習モードを追加。</p>
-    <p><b>v1.4.0</b> 出題範囲に「一般角」（マイナスの角・360°を超える角）を追加。ベストスコアを記録するようになりました。</p>
-    <p><b>v1.2.0</b> スコア制に：速く答えるほど高得点、連続正解でコンボボーナス。</p>
-    <p><b>v1.0.0</b> 公開！60秒タイムアタック。ミスすると単位円の図で復習できます。</p>
+    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
       <button class="btn-home" id="btn-ver-close">閉じる</button>
     </div>
@@ -1059,17 +1053,17 @@
     const k=skey();
     if(!RANKED[k]) return;
     if(!window.LB || !window.LB.enabled){ alert("ランキング機能は準備中です"); return; }
-    try{
-      if(!localStorage.getItem("tta-consent")){
-        const ok=confirm("ランキングにはスコアと自動生成された名前（例：すばやい余弦#4821）のみが送信されます。個人情報は送信されません。登録しますか？");
-        if(!ok) return;
-        localStorage.setItem("tta-consent","1");
-      }
-    }catch(e){}
+    let consented=false;
+    try{ consented=!!localStorage.getItem("tta-consent"); }catch(e){}
+    if(!consented){
+      const ok=confirm("ランキングにはスコアと自動生成された名前（例：すばやい余弦#48213）のみが送信されます。個人情報は送信されません。登録しますか？（登録すると名前が固定されます）");
+      if(!ok) return;
+    }
     const btn=$("btn-rank-submit");
     btn.disabled=true; btn.textContent="登録中…";
     try{
       await window.LB.submit(k, score, getHandle());
+      try{ localStorage.setItem("tta-consent","1"); }catch(e){}   // lock the name only after a successful submit
       btn.style.display="none";
       invalidateRankCache(k);   // show the fresh board including the new entry
       openRanking(k);
