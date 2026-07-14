@@ -357,7 +357,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.9.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.10.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -383,6 +383,7 @@
       <div class="lab" id="r-lab">スコア</div>
       <div class="newrec" id="r-new" style="display:none">🏆 ベスト更新！</div>
       <div class="bestnow" id="r-best"></div>
+      <div class="bestnow" id="r-avg"></div>
       <button class="rankbtn" id="btn-rank-submit" style="display:none">🏆 ランキングに登録</button>
     </div>
     <div class="result-stats">
@@ -458,6 +459,9 @@
       <div class="stat"><div class="v" id="mp-plays">0</div><div class="k">プレイ</div></div>
       <div class="stat"><div class="v" id="mp-pract">0</div><div class="k">練習</div></div>
     </div>
+    <div class="mp-sec">平均回答時間の推移（タイムアタック・正解のみ）</div>
+    <div class="seg" id="mp-chart-tabs" style="margin-bottom:6px"></div>
+    <div id="mp-chart"></div>
     <div class="mp-sec">自己ベスト TOP5</div>
     <div id="mp-top"></div>
     <div class="mp-sec">最近のプレイ</div>
@@ -489,6 +493,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.10.0</b> 平均回答時間を記録するようになりました！結果画面に毎回表示され、マイページでは推移が折れ線グラフで見られます。</p>
     <p><b>v1.9.0</b> はじめてのプレイ時に名前を選べるようになりました。名前の種類も大幅に増加！マイページでは名前の引き直しもできます（ランキング登録までは何度でもOK）。</p>
     <p><b>v1.7.0</b> マイページ登場（画面右上のバッジから）：バッジ称号（🔰→👑）・自己ベストTOP5・プレイ履歴。オンラインランキングも稼働開始！</p>
     <p><b>v1.6.0</b> ランクモード（BASIC／ADVANCED／EXPERT）と、単位円を見ながら時間無制限で取り組める練習モードを追加。</p>
@@ -532,7 +537,7 @@
   // ---------- state ----------
   const settings={func:"mix",unit:"deg",range:"full",mode:"attack",pcircle:"on"};
   let time=DUR, running=false, paused=false, tick=null;
-  let score=0, correctCount=0, missCount=0, streak=0, maxStreak=0, qStart=0;
+  let score=0, correctCount=0, missCount=0, streak=0, maxStreak=0, qStart=0, sumSec=0;
   let cur=null, prevKey="";
   let misses=[];
 
@@ -744,6 +749,7 @@
     if(v===cur.ans){
       const sec=(performance.now()-qStart)/1000;
       const fast=sec<=2.0;
+      sumSec+=sec;
       streak++; maxStreak=Math.max(maxStreak,streak);
       let pts=100+(fast?50:0);
       if(streak>=3) pts+=Math.min(10*streak,100);
@@ -848,7 +854,7 @@
 
   // ---------- timer / flow ----------
   function start(){
-    time=DUR; score=0; correctCount=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey="";
+    time=DUR; score=0; correctCount=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey=""; sumSec=0;
     const prac = settings.mode==="practice";
     $("score").textContent="0"; $("streak").textContent="";
     $("timebar").style.display = prac ? "none" : "";
@@ -879,21 +885,24 @@
     const prac = settings.mode==="practice";
     // record personal stats (device-local)
     const st=loadStats();
+    const avgSec = (!prac && correctCount>0) ? Math.round(sumSec/correctCount*100)/100 : null;
     if(prac){
       st.pract++;
     }else{
       st.total+=score;
       st.plays++;
-      st.hist.unshift({t:Date.now(),k:skey(),s:score});
+      st.hist.unshift({t:Date.now(),k:skey(),s:score,a:avgSec});
       st.hist=st.hist.slice(0,100);
     }
     saveStats(st);
     updateMyBtn();
+    $("r-avg").textContent = avgSec!=null ? "平均回答時間 "+avgSec.toFixed(2)+" 秒/問（正解のみ）" : "";
     if(prac){
       $("r-score").textContent=correctCount;
       $("r-lab").textContent="正解数";
       $("r-new").style.display="none";
       $("r-best").textContent="";
+      $("r-avg").textContent="";
       $("btn-rank-submit").style.display="none";
     }else{
       $("r-lab").textContent="スコア";
@@ -1136,6 +1145,58 @@
     try{ localStorage.setItem("tta-handle",genHandle()); }catch(e){}
     $("mp-handle").textContent="👤 "+getHandle();
   });
+  // ---------- answer-speed chart (device-local, SVG) ----------
+  let chartMode=null;
+  function renderSpeedChart(){
+    const st=loadStats();
+    const withA=st.hist.filter(h=>h.a!=null);
+    const tabs=$("mp-chart-tabs"), box=$("mp-chart");
+    const modes=[...new Set(withA.map(h=>h.k))];
+    if(!modes.length){
+      tabs.innerHTML="";
+      box.innerHTML='<div class="rank-sub" style="padding:8px 0">まだデータがありません（今後のプレイから記録されます）</div>';
+      return;
+    }
+    if(!modes.includes(chartMode)) chartMode=modes[0];
+    tabs.innerHTML="";
+    modes.forEach(m=>{
+      const b=document.createElement("button");
+      b.textContent=fmtModeKey(m);
+      b.style.fontSize="11px";
+      if(m===chartMode) b.classList.add("sel");
+      b.addEventListener("click",()=>{ chartMode=m; renderSpeedChart(); });
+      tabs.appendChild(b);
+    });
+    // oldest -> newest, last 20 runs of the selected mode
+    const data=withA.filter(h=>h.k===chartMode).slice(0,20).reverse().map(h=>h.a);
+    box.innerHTML=speedChartSVG(data);
+  }
+  function speedChartSVG(data){
+    const W=292,H=130,L=34,R=10,T=14,B=20;
+    let mn=Math.min(...data), mx=Math.max(...data);
+    if(mx-mn<0.4){ const mid=(mn+mx)/2; mn=mid-0.2; mx=mid+0.2; }
+    const X=i=>data.length===1 ? (L+(W-L-R)/2) : L+i*(W-L-R)/(data.length-1);
+    const Y=v=>T+(mx-v)/(mx-mn)*(H-T-B);
+    let s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="max-width:100%">';
+    [mx,(mn+mx)/2,mn].forEach(v=>{
+      s+='<line x1="'+L+'" y1="'+Y(v)+'" x2="'+(W-R)+'" y2="'+Y(v)+'" stroke="var(--panel-hi)" stroke-width="1"/>'
+        +'<text x="'+(L-4)+'" y="'+(Y(v)+3.5)+'" text-anchor="end" font-size="9" fill="var(--ink-dim)">'+v.toFixed(1)+'s</text>';
+    });
+    if(data.length>1){
+      const pts=data.map((v,i)=>X(i)+","+Y(v)).join(" ");
+      s+='<polyline points="'+pts+'" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>';
+    }
+    data.forEach((v,i)=>{
+      const last=i===data.length-1;
+      s+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="'+(last?4:2.5)+'" fill="var(--gold)"'+(last?'':' opacity=".7"')+'/>';
+      if(last){
+        s+='<text x="'+Math.min(X(i),W-R-24)+'" y="'+Math.max(11,Y(v)-8)+'" text-anchor="middle" font-size="10" font-weight="800" fill="var(--gold)">'+v.toFixed(2)+'s</text>';
+      }
+    });
+    s+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="var(--ink-dim)">直近'+data.length+'プレイの推移（下ほど速い）</text>';
+    return s+'</svg>';
+  }
+
   function openMyPage(){
     const st=loadStats();
     $("mp-handle").textContent="👤 "+getHandle();
@@ -1160,6 +1221,7 @@
     const recent=st.hist.slice(0,5)
       .map(h=>({rank:"",label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
     renderRows($("mp-recent"),recent);
+    renderSpeedChart();
     $("mp-overlay").classList.add("show");
   }
   $("btn-mypage").addEventListener("click",openMyPage);
