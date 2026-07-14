@@ -403,6 +403,7 @@
       <div class="bestnow" id="r-best"></div>
       <div class="bestnow" id="r-avg"></div>
       <button class="rankbtn" id="btn-rank-submit" style="display:none">🏆 ランキングに登録</button>
+      <button class="rankbtn" id="btn-rank-result" style="display:none">🏆 ランキングを見る</button>
     </div>
     <div class="result-stats">
       <div class="stat"><div class="v" id="r-correct">0</div><div class="k">正解数</div></div>
@@ -482,10 +483,10 @@
       <div class="stat"><div class="v" id="mp-plays">0</div><div class="k">プレイ</div></div>
       <div class="stat"><div class="v" id="mp-pract">0</div><div class="k">練習</div></div>
     </div>
-    <div class="mp-sec">平均回答時間の推移（タイムアタック・正解のみ）</div>
+    <div class="mp-sec">平均回答時間の推移（ランクモード・正解のみ）</div>
     <div class="seg" id="mp-chart-tabs" style="margin-bottom:6px"></div>
     <div id="mp-chart"></div>
-    <div class="mp-sec">自己ベスト TOP5</div>
+    <div class="mp-sec">モード別ベスト（ランクモード）</div>
     <div id="mp-top"></div>
     <div class="mp-sec">最近のプレイ</div>
     <div id="mp-recent"></div>
@@ -967,6 +968,7 @@
       $("r-best").textContent="";
       $("r-avg").textContent="";
       $("btn-rank-submit").style.display="none";
+      $("btn-rank-result").style.display="none";
     }else{
       $("r-lab").textContent="スコア";
       // best score check
@@ -974,7 +976,9 @@
       const isNew = (prev===undefined) ? score>0 : score>prev;
       if(isNew){ bests[k]=score; saveBests(bests); }
       $("r-new").style.display = isNew ? "" : "none";
-      $("btn-rank-submit").style.display = (isNew && score>0 && RANKED[k]) ? "" : "none";
+      const showSubmit = isNew && score>0 && RANKED[k];
+      $("btn-rank-submit").style.display = showSubmit ? "" : "none";
+      $("btn-rank-result").style.display = (RANKED[k] && !showSubmit) ? "" : "none";
       const bestNow = isNew ? score : (prev!==undefined ? prev : score);
       $("r-best").textContent = "このモードのベスト "+bestNow;
       updateBestView();
@@ -1129,6 +1133,7 @@
     b.addEventListener("click",()=>openRanking(b.dataset.k));
   });
   $("btn-rank").addEventListener("click",()=>openRanking());
+  $("btn-rank-result").addEventListener("click",()=>openRanking());
   $("btn-rank-close").addEventListener("click",()=>$("rank-overlay").classList.remove("show"));
   $("btn-rank-submit").addEventListener("click",async ()=>{
     const k=skey();
@@ -1157,8 +1162,8 @@
 
   // ---------- personal stats & badges (device-local only) ----------
   const BADGES=[
-    [0,"見習い","🔰"],[5000,"ブロンズ","🥉"],[25000,"シルバー","🥈"],
-    [100000,"ゴールド","🥇"],[300000,"プラチナ","💎"],[1000000,"レジェンド","👑"]
+    [0,"見習い","🔰"],[10000,"ブロンズ","🥉"],[50000,"シルバー","🥈"],
+    [200000,"ゴールド","🥇"],[600000,"プラチナ","💎"],[2000000,"レジェンド","👑"]
   ];
   function loadStats(){
     let s={};
@@ -1224,15 +1229,21 @@
   let chartMode=null;
   function renderSpeedChart(){
     const st=loadStats();
-    const withA=st.hist.filter(h=>h.a!=null);
+    const withA=st.hist.filter(h=>h.a!=null && RANKED[h.k]);   // ranked modes only: speeds are comparable within a fixed question pool
     const tabs=$("mp-chart-tabs"), box=$("mp-chart");
     const modes=[...new Set(withA.map(h=>h.k))];
     if(!modes.length){
       tabs.innerHTML="";
-      box.innerHTML='<div class="rank-sub" style="padding:8px 0">まだデータがありません（今後のプレイから記録されます）</div>';
+      box.innerHTML='<div class="rank-sub" style="padding:8px 0">まだデータがありません（ランクモードのプレイから記録されます）</div>';
       return;
     }
-    if(!modes.includes(chartMode)) chartMode=modes[0];
+    // fixed order: BASIC -> ADVANCED -> EXPERT, then any custom modes
+    const ORDER=Object.keys(RANKED);
+    modes.sort((a,b)=>{
+      const ra=ORDER.indexOf(a), rb=ORDER.indexOf(b);
+      return (ra<0?ORDER.length:ra)-(rb<0?ORDER.length:rb);
+    });
+    if(!modes.includes(chartMode)) chartMode=withA[0].k;   // default: most recently played
     tabs.innerHTML="";
     modes.forEach(m=>{
       const b=document.createElement("button");
@@ -1290,9 +1301,13 @@
     $("mp-total").textContent=st.total.toLocaleString();
     $("mp-plays").textContent=st.plays;
     $("mp-pract").textContent=st.pract;
-    const top=[...st.hist].sort((a,b)=>b.s-a.s).slice(0,5)
-      .map((h,i)=>({rank:i+1,label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
-    renderRows($("mp-top"),top);
+    const bests=loadBests();
+    const modeRows=Object.keys(RANKED).map(k=>({
+      rank:"",
+      label:fmtModeKey(k),
+      score:(bests[k]!==undefined ? bests[k] : "—")
+    }));
+    renderRows($("mp-top"),modeRows);
     const recent=st.hist.slice(0,5)
       .map(h=>({rank:"",label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
     renderRows($("mp-recent"),recent);
