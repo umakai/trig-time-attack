@@ -562,7 +562,7 @@
         $(id).querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
         b.classList.add("sel");
         settings[key]=b.dataset.v;
-        if(key!=="pcircle") clearChips();   // manual change breaks preset link
+        syncChips();   // chips light up whenever settings match a preset
         refreshStartUI();
         updateBestView();
       });
@@ -583,8 +583,13 @@
   function syncSeg(id,key){
     $(id).querySelectorAll("button").forEach(b=>b.classList.toggle("sel",b.dataset.v===settings[key]));
   }
-  function clearChips(){
-    document.querySelectorAll(".chip").forEach(c=>c.classList.remove("sel"));
+  function syncChips(){
+    document.querySelectorAll(".chip").forEach(c=>{
+      const p=PRESETS[c.dataset.preset];
+      const match = settings.mode==="attack"
+        && settings.func===p.func && settings.unit===p.unit && settings.range===p.range;
+      c.classList.toggle("sel",match);
+    });
   }
   document.querySelectorAll(".chip").forEach(chip=>{
     chip.addEventListener("click",()=>{
@@ -593,7 +598,7 @@
       settings.mode="attack";
       syncSeg("seg-func","func"); syncSeg("seg-unit","unit");
       syncSeg("seg-range","range"); syncSeg("seg-mode","mode");
-      clearChips(); chip.classList.add("sel");
+      syncChips();
       refreshStartUI();
       updateBestView();
     });
@@ -606,7 +611,7 @@
     $("rule-text").innerHTML = prac
       ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。"
       : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！";
-    if(prac){ clearChips(); }
+    syncChips();
   }
   refreshStartUI();
   updateBestView();
