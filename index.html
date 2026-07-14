@@ -160,6 +160,19 @@
   }
   .rank-sub{font-size:12px;color:var(--ink-dim);text-align:center;margin-bottom:6px;}
 
+  /* countdown */
+  .cnum{
+    font-size:110px;font-weight:800;color:var(--gold);
+    font-family:ui-monospace,Menlo,monospace;
+  }
+  .cnum.pop{animation:cpop 1s ease both;}
+  @keyframes cpop{
+    0%{transform:scale(1.7);opacity:0;}
+    25%{transform:scale(1);opacity:1;}
+    85%{opacity:1;}
+    100%{transform:scale(.92);opacity:.15;}
+  }
+
   /* my page */
   #scr-start{position:relative;}
   .mypage-btn{
@@ -427,6 +440,11 @@
       <button class="btn-retry" id="btn-resume">再開</button>
     </div>
   </div>
+</div>
+
+<!-- ===== COUNTDOWN OVERLAY ===== -->
+<div class="overlay" id="count-overlay">
+  <div class="cnum" id="cnum">3</div>
 </div>
 
 <!-- ===== WELCOME OVERLAY (first launch) ===== -->
@@ -857,7 +875,29 @@
   }
 
   // ---------- timer / flow ----------
+  let counting=false;
+  function runCountdown(done){
+    const ov=$("count-overlay"), n=$("cnum");
+    const seq=["3","2","1","GO!"];
+    let i=0;
+    counting=true;
+    ov.classList.add("show");
+    function step(){
+      n.textContent=seq[i];
+      n.style.fontSize = seq[i]==="GO!" ? "80px" : "110px";
+      n.classList.remove("pop"); void n.offsetWidth; n.classList.add("pop");
+      i++;
+      if(i<seq.length){
+        setTimeout(step, 1000);
+      }else{
+        setTimeout(()=>{ ov.classList.remove("show"); counting=false; done(); }, 450);
+      }
+    }
+    step();
+  }
+
   function start(){
+    if(counting) return;   // ignore double-taps during the countdown
     time=DUR; score=0; correctCount=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey=""; sumSec=0;
     const prac = settings.mode==="practice";
     $("score").textContent="0"; $("streak").textContent="";
@@ -867,20 +907,39 @@
     $("pcircle").style.display = prac ? "flex" : "none";
     $("btn-pause").textContent = prac ? "■ 終了" : "⏸ 中断";
     if(prac) updPracCounts();
-    running=true; paused=false;
-    show("scr-game");
-    nextQuestion();
     clearInterval(tick);
-    if(prac) return;   // no timer in practice mode
-    tick=setInterval(()=>{
-      if(!running||paused) return;
-      time-=0.1;
-      if(time<=0){ time=0; finish(); }
-      const fill=$("timefill");
-      fill.style.width=(time/DUR*100)+"%";
-      fill.classList.toggle("low",time<=10);
-      $("timenum").textContent=time.toFixed(1);
-    },100);
+    $("question").innerHTML="";
+    show("scr-game");
+    if(prac){
+      running=true; paused=false;
+      nextQuestion();
+      return;   // no timer / no countdown in practice mode
+    }
+    // reset the timer display to full while counting down
+    $("timefill").style.width="100%";
+    $("timefill").classList.remove("low");
+    $("timenum").textContent=DUR.toFixed(1);
+    running=false; paused=false;
+    runCountdown(()=>{
+      running=true;
+      if(document.hidden){
+        // app went to background during the countdown: start paused
+        paused=true;
+        $("question").style.visibility="hidden";
+        $("pause-overlay").classList.add("show");
+      }else{
+        nextQuestion();
+      }
+      tick=setInterval(()=>{
+        if(!running||paused) return;
+        time-=0.1;
+        if(time<=0){ time=0; finish(); }
+        const fill=$("timefill");
+        fill.style.width=(time/DUR*100)+"%";
+        fill.classList.toggle("low",time<=10);
+        $("timenum").textContent=time.toFixed(1);
+      },100);
+    });
   }
 
   function finish(){
