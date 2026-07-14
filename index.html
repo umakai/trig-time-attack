@@ -1011,12 +1011,12 @@
       hd.textContent=r.handle||"？？？";
       const tag=document.createElement("span");
       tag.className="devtag";
-      tag.textContent="講師記録";
+      tag.textContent="制作者記録";
       hd.appendChild(tag);
       list.appendChild(d);
     });
     if(!players.length){
-      list.innerHTML+='<div class="rank-sub" style="padding:12px 0">1位の席は空いています。先生を超えろ！</div>';
+      list.innerHTML+='<div class="rank-sub" style="padding:12px 0">1位の席は空いています。制作者を超えろ！</div>';
       return;
     }
     players.forEach((r,i)=>{
