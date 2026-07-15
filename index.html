@@ -375,7 +375,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.0.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.1.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -517,7 +517,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
-    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
+    <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>\n    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
       <button class="btn-home" id="btn-ver-close">閉じる</button>
     </div>
@@ -704,12 +704,16 @@
 
   // plain unit circle for practice mode: axes + circle + faint famous-angle rays (+ optional radius)
   function plainCircle(deg,showRad){
-    const S=170,c=S/2,r=64;
+    const c=100, r=88;   // fixed geometry; the viewBox decides which part is visible
+    const rng=settings.range;
+    const view = rng==="q1"   ? {vb:"92 0 108 108", w:156, h:156}
+               : rng==="half" ? {vb:"0 0 200 116",  w:214, h:124}
+               :                {vb:"0 0 200 200",  w:170, h:170};
     const th=deg*Math.PI/180;
     const px=c+r*Math.cos(th), py=c-r*Math.sin(th);
     // faint dashed rays for the famous angles in the current range (skip axis-aligned ones)
-    const famous = settings.range==="q1" ? ANGLES_Q1
-                 : settings.range==="half" ? ANGLES_HALF
+    const famous = rng==="q1" ? ANGLES_Q1
+                 : rng==="half" ? ANGLES_HALF
                  : ANGLES_FULL;
     let rays="";
     famous.forEach(a=>{
@@ -720,12 +724,18 @@
     });
     let rad="";
     if(showRad){
-      rad='<line x1="'+c+'" y1="'+c+'" x2="'+px+'" y2="'+py+'" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>'
+      // in Q1 zoom, reveal the right triangle hiding inside the unit circle (the SUGAKU-I definition)
+      if(rng==="q1"){
+        rad+='<polygon points="'+c+','+c+' '+px+','+c+' '+px+','+py+'" fill="var(--gold)" opacity=".13"/>'
+           +'<line x1="'+px+'" y1="'+py+'" x2="'+px+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1.5"/>'
+           +'<path d="M '+(px-9)+' '+c+' L '+(px-9)+' '+(c-9)+' L '+px+' '+(c-9)+'" fill="none" stroke="var(--ink-dim)" stroke-width="1"/>';
+      }
+      rad+='<line x1="'+c+'" y1="'+c+'" x2="'+px+'" y2="'+py+'" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/>'
          +'<circle cx="'+px+'" cy="'+py+'" r="5" fill="var(--gold)"/>';
     }
-    return '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'">'
-      +'<line x1="6" y1="'+c+'" x2="'+(S-6)+'" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1"/>'
-      +'<line x1="'+c+'" y1="6" x2="'+c+'" y2="'+(S-6)+'" stroke="var(--ink-dim)" stroke-width="1"/>'
+    return '<svg width="'+view.w+'" height="'+view.h+'" viewBox="'+view.vb+'">'
+      +'<line x1="6" y1="'+c+'" x2="194" y2="'+c+'" stroke="var(--ink-dim)" stroke-width="1"/>'
+      +'<line x1="'+c+'" y1="6" x2="'+c+'" y2="194" stroke="var(--ink-dim)" stroke-width="1"/>'
       +rays
       +'<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="var(--ink)" stroke-width="1.5"/>'
       +rad+'</svg>';
