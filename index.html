@@ -920,6 +920,10 @@
     if(prac) updPracCounts();
     clearInterval(tick);
     $("question").innerHTML="";
+    $("question").classList.remove("qflash-ok");   // stale flash would replay on re-show
+    $("question").style.visibility="visible";
+    $("pop").textContent="";
+    $("pop").classList.remove("show");   // stale popup would replay its animation on re-show
     show("scr-game");
     if(prac){
       running=true; paused=false;
