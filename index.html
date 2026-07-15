@@ -17,6 +17,13 @@
     --radius:14px;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  /* mobile hygiene: no pull-to-refresh, no double-tap zoom, no long-press selection on controls */
+  html,body{overscroll-behavior-y:none;}
+  button{touch-action:manipulation;}
+  button,.question,.hud,.timenum,.cnum,.pop{
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+  }
   html,body{height:100%;}
   body{
     background:var(--bg);
@@ -297,7 +304,10 @@
   .btnrow button{
     flex:1;padding:15px;border:none;border-radius:var(--radius);
     font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
+    transition:opacity .25s;
   }
+  .btnrow button:disabled{opacity:.35;}
+  .rankbtn:disabled{opacity:.35;}
   .btn-retry{background:var(--gold);color:#1A1400;}
   .btn-home{background:var(--panel);color:var(--ink);}
 
@@ -517,7 +527,8 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
-    <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>\n    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
+    <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>
+    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
       <button class="btn-home" id="btn-ver-close">閉じる</button>
     </div>
@@ -1020,6 +1031,10 @@
       });
     }
     show("scr-result");
+    // brief lockout: a finger already falling toward the palette must not hit these buttons
+    const lockIds=["btn-retry","btn-home","btn-rank-submit","btn-rank-result"];
+    lockIds.forEach(id=>{ $(id).disabled=true; });
+    setTimeout(()=>lockIds.forEach(id=>{ $(id).disabled=false; }), 800);
   }
 
   $("btn-start").addEventListener("click",start);
