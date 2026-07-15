@@ -20,6 +20,9 @@
   /* mobile hygiene: no pull-to-refresh, no double-tap zoom, no long-press selection on controls */
   html,body{overscroll-behavior-y:none;}
   html,body,button,.screen,.overlay,.fb{touch-action:manipulation;}
+  #scr-game{touch-action:none;}          /* no pinch/scroll gestures mid-game: rapid taps can fake a pinch */
+  .overlay{touch-action:none;}
+  .rank-list,.changelog,.miss-list{touch-action:pan-y;}   /* scrollable lists keep vertical panning */
   button,.question,.hud,.timenum,.cnum,.pop{
     -webkit-user-select:none;user-select:none;
     -webkit-touch-callout:none;
@@ -587,6 +590,13 @@
 
   // ---------- helpers ----------
   const $=id=>document.getElementById(id);
+
+  // iOS fallback: rapid multi-touch tapping can register as a pinch; suppress the gesture events
+  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
+    document.addEventListener(ev,e=>e.preventDefault());
+  });
+  document.addEventListener("dblclick",e=>e.preventDefault());
+
   function show(id){
     document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
     $(id).classList.add("active");
