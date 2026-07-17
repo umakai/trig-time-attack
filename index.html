@@ -52,7 +52,7 @@
   }
   .seg.modetabs button{
     background:none;border-radius:0;position:relative;
-    padding:14px 4px;font-size:15px;font-weight:800;color:var(--ink-dim);
+    padding:14px 2px;font-size:13.5px;font-weight:800;color:var(--ink-dim);
   }
   .seg.modetabs button.sel{background:none;color:var(--gold);}
   .seg.modetabs button.sel::after{
@@ -182,6 +182,35 @@
     85%{opacity:1;}
     100%{transform:scale(.92);opacity:.15;}
   }
+
+  /* daily challenge */
+  .newdot{position:absolute;top:8px;right:10%;width:7px;height:7px;border-radius:50%;background:var(--gold);}
+  .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .dhead .ddate{font-size:14px;font-weight:800;}
+  .dhead .ddate span{color:var(--ink-dim);font-size:11px;font-weight:600;margin-left:6px;}
+  .streakpill{
+    background:rgba(255,201,77,.12);border:1px solid rgba(255,201,77,.5);
+    border-radius:99px;padding:6px 12px;font-size:13px;font-weight:800;color:var(--gold);
+  }
+  .dcard{border:1px solid var(--panel-hi);border-radius:14px;padding:14px;margin-bottom:12px;background:var(--panel);}
+  .dcard .drow{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .dcard .dname{font-size:16px;font-weight:800;}
+  .dcard .dtag{font-size:11px;color:var(--ink-dim);}
+  .dbtn{
+    width:100%;margin-top:10px;padding:13px;border:none;border-radius:12px;
+    background:var(--gold);color:#1A1400;font-size:15px;font-weight:800;
+    font-family:inherit;cursor:pointer;
+  }
+  .dcard.done{border-color:rgba(74,222,128,.45);}
+  .dbtn.dim{background:var(--panel-hi);color:var(--ink-dim);cursor:default;}
+  .dbtn.review{background:none;border:1px solid var(--gold);color:var(--gold);}
+  .dresult{
+    display:flex;justify-content:space-between;align-items:center;
+    background:rgba(74,222,128,.08);border-radius:10px;padding:9px 12px;margin-top:10px;
+  }
+  .dresult .lab{font-size:12px;color:var(--ok);font-weight:800;}
+  .dresult .val{font-size:18px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
+  .dnote{font-size:11px;color:var(--ink-dim);text-align:center;line-height:1.7;margin:2px 0 14px;}
 
   /* my page */
   #scr-start{position:relative;}
@@ -331,6 +360,7 @@
     <div class="seg modetabs" id="seg-mode">
       <button data-v="attack" class="sel">⚡ タイムアタック</button>
       <button data-v="practice">📖 練習</button>
+      <button data-v="daily">🗓️ デイリー<span class="newdot" id="new-daily" style="display:none"></span></button>
     </div>
 
     <div class="rule" id="rule-text">正解 <b class="pl">+100点</b>、2秒以内なら <b class="pl">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class="mn">−100点</b>＆残り時間 <b class="mn">−3秒</b>！</div>
@@ -385,10 +415,19 @@
       <button class="rankbtn" id="btn-rank">🏆 ランキングを見る</button>
     </div>
 
+    <div id="daily-panel" style="display:none">
+      <div class="dhead">
+        <div class="ddate" id="ddate"></div>
+        <div class="streakpill" id="dstreak" style="display:none"></div>
+      </div>
+      <div id="daily-cards"></div>
+      <div class="dnote">全員が同じ問題・同じ順番に挑戦します。やり直しはできません。<br>どちらか1つ完走すると連続日数が伸びます。</div>
+    </div>
+
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.1.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.2.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -517,6 +556,7 @@
       <button data-k="mix-deg-q1">BASIC</button>
       <button data-k="mix-deg-half">ADVANCED</button>
       <button data-k="mix-rad-gen">EXPERT</button>
+      <button data-k="plays">回数</button>
     </div>
     <div class="rank-sub" id="rank-mode"></div>
     <div class="rank-list" id="rank-list">読み込み中…</div>
@@ -530,6 +570,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習と連続日数🔥も。ランキングに「回数」部門を追加しました（正解5問以上のプレイをカウント・ランキング参加者が対象）。</p>
     <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>
     <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
@@ -568,10 +609,96 @@
 
   // ---------- state ----------
   const settings={func:"mix",unit:"deg",range:"full",mode:"attack",pcircle:"on"};
+  let daily=null;    // active daily run: {ch:"d1"|"d2", rng}
+  let review=null;   // active review run: {ch, queue:[{f,deg,unit},...]}
   let time=DUR, running=false, paused=false, tick=null;
   let score=0, correctCount=0, missCount=0, streak=0, maxStreak=0, qStart=0, sumSec=0;
   let cur=null, prevKey="";
   let misses=[];
+
+  // ---------- daily challenge (device-local; question order derived from the date) ----------
+  const DAILY_DEF={
+    d1:{name:"今日の数Ⅰ", tag:"度数法・MIX・0°〜180°", unit:"deg"},
+    d2:{name:"今日の数Ⅱ", tag:"弧度法・MIX・一般角",  unit:"rad"}
+  };
+  function dayKey(off){
+    const d=new Date(Date.now()-4*3600*1000+(off||0)*86400000);   // the day flips at 4:00 AM
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function seedFrom(s){
+    let h=1779033703^s.length;
+    for(let i=0;i<s.length;i++){ h=Math.imul(h^s.charCodeAt(i),3432918353); h=(h<<13)|(h>>>19); }
+    return h>>>0;
+  }
+  function mulberry32(a){
+    return function(){
+      a|=0; a=a+0x6D2B79F5|0;
+      let t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      return ((t^t>>>14)>>>0)/4294967296;
+    };
+  }
+  function loadDaily(){
+    let d={};
+    try{ d=JSON.parse(localStorage.getItem("tta-daily")||"{}"); }catch(e){}
+    const today=dayKey();
+    if(d.day!==today){ d={day:today, streak:d.streak||0, lastStreakDay:d.lastStreakDay}; }
+    return d;
+  }
+  function saveDaily(d){ try{ localStorage.setItem("tta-daily",JSON.stringify(d)); }catch(e){} }
+  function renderDaily(){
+    const d=loadDaily();
+    const dt=new Date(Date.now()-4*3600*1000);
+    $("ddate").innerHTML=(dt.getMonth()+1)+"/"+dt.getDate()+"（"+"日月火水木金土"[dt.getDay()]+"）の問題<span>朝4:00 更新</span>";
+    const showStreak = d.streak>0 && (d.lastStreakDay===dayKey()||d.lastStreakDay===dayKey(-1));
+    $("dstreak").style.display = showStreak ? "" : "none";
+    $("dstreak").textContent="🔥 "+d.streak+"日連続";
+    const box=$("daily-cards");
+    box.innerHTML="";
+    ["d1","d2"].forEach(ch=>{
+      const def=DAILY_DEF[ch], st=d[ch];
+      const card=document.createElement("div");
+      card.className="dcard"+(st&&st.done?" done":"");
+      let inner='<div class="drow"><div class="dname">'+def.name+'</div><div class="dtag">'+def.tag+'</div></div>';
+      if(st&&st.done){
+        const perfect=!st.misses||st.misses.length===0;
+        const label = perfect ? "✓ 挑戦済み ・ パーフェクト！"
+                    : st.reviewed ? "✓ 挑戦済み ・ 復習完了 ✨"
+                    : "✓ 挑戦済み";
+        inner+='<div class="dresult"><span class="lab">'+label+'</span><span class="val">'+st.score+'</span></div>';
+        if(!perfect && !st.reviewed){
+          inner+='<button class="dbtn review" data-rev="'+ch+'">📖 ミスを復習する（'+st.misses.length+'問）</button>';
+        }else{
+          inner+='<button class="dbtn dim" disabled>また明日！</button>';
+        }
+      }else{
+        inner+='<button class="dbtn" data-go="'+ch+'">挑戦する（1日1回）</button>';
+      }
+      card.innerHTML=inner;
+      box.appendChild(card);
+    });
+    box.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>startDaily(b.dataset.go)));
+    box.querySelectorAll("[data-rev]").forEach(b=>b.addEventListener("click",()=>startReview(b.dataset.rev)));
+  }
+  function startDaily(ch){
+    const d=loadDaily();
+    if(d[ch]&&d[ch].done) return;
+    start({daily:{ch, rng:mulberry32(seedFrom(dayKey()+"-"+ch))}});
+  }
+  function startReview(ch){
+    const d=loadDaily();
+    if(!d[ch]||!d[ch].done||!d[ch].misses||!d[ch].misses.length) return;
+    start({review:{ch, queue:d[ch].misses.slice()}});
+  }
+  function finishReview(){
+    const ch=review.ch;
+    review=null; running=false;
+    const d=loadDaily();
+    if(d[ch]) d[ch].reviewed=true;
+    saveDaily(d);
+    show("scr-start");
+    refreshStartUI();
+  }
 
   // ---------- best score (per device, per mode) ----------
   function skey(){ return settings.func+"-"+settings.unit+"-"+settings.range; }
@@ -649,17 +776,29 @@
     });
   });
   function refreshStartUI(){
-    const prac = settings.mode==="practice";
+    const m=settings.mode;
+    const prac = m==="practice", dly = m==="daily";
     $("pcircle-wrap").style.display = prac ? "" : "none";
-    $("chips-wrap").style.display = prac ? "none" : "";
-    $("best-view").style.display = prac ? "none" : "";
-    $("rule-text").innerHTML = prac
+    $("chips-wrap").style.display = m==="attack" ? "" : "none";
+    $("best-view").style.display = m==="attack" ? "" : "none";
+    document.querySelector(".scard").style.display = dly ? "none" : "";
+    $("daily-panel").style.display = dly ? "" : "none";
+    $("btn-start").style.display = dly ? "none" : "";
+    if(dly){
+      renderDaily();
+      try{ localStorage.setItem("tta-seen-daily","1"); }catch(e){}
+      $("new-daily").style.display="none";
+    }
+    $("rule-text").innerHTML = dly
+      ? "全員が<b>同じ問題</b>に<b>1日1回</b>だけ挑戦。ルールはタイムアタックと同じ。<br>ミスした問題は、挑戦のあとに復習できます。"
+      : prac
       ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。"
       : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！";
     syncChips();
   }
   refreshStartUI();
   updateBestView();
+  try{ if(!localStorage.getItem("tta-seen-daily")) $("new-daily").style.display=""; }catch(e){}
 
   function sq(s){
     return String(s).replace(/√(\d+)/g,'<span class="sqrt">√<span class="rad">$1</span></span>');
@@ -696,6 +835,34 @@
 
   // ---------- question ----------
   function nextQuestion(){
+    if(review){
+      const q=review.queue[0];
+      cur={f:q.f,deg:q.deg,unit:q.unit,ans:TABLE[q.f][((q.deg%360)+360)%360]};
+      $("question").innerHTML='<span class="fn">'+q.f+'</span>&thinsp;'+fmtAngle(q.deg,q.unit);
+      buildPalette(q.f,true);
+      $("streak").textContent="残り"+review.queue.length+"問";
+      qStart=performance.now();
+      return;
+    }
+    if(daily){
+      const rng=daily.rng, ch=daily.ch;
+      const dfuncs=["sin","cos","tan"];
+      const dangles = ch==="d1" ? ANGLES_HALF : ANGLES_FULL;
+      let f,a,key,guard=0;
+      do{
+        f=dfuncs[Math.floor(rng()*3)];
+        a=dangles[Math.floor(rng()*dangles.length)];
+        if(ch==="d2"){ const roll=rng(); if(roll<0.3)a+=360; else if(roll<0.6)a-=360; }
+        key=f+a; guard++;
+      }while(key===prevKey && guard<20);
+      prevKey=key;
+      const norm=((a%360)+360)%360;
+      cur={f,deg:a,unit:DAILY_DEF[ch].unit,ans:TABLE[f][norm]};
+      $("question").innerHTML='<span class="fn">'+f+'</span>&thinsp;'+fmtAngle(a,cur.unit);
+      buildPalette(f,true);
+      qStart=performance.now();
+      return;
+    }
     const funcs = settings.func==="mix" ? ["sin","cos","tan"] : [settings.func];
     const angles = settings.range==="q1" ? ANGLES_Q1
                  : settings.range==="half" ? ANGLES_HALF
@@ -762,8 +929,8 @@
       +rad+'</svg>';
   }
 
-  function buildPalette(f){
-    const q1 = settings.range==="q1";
+  function buildPalette(f,forceFull){
+    const q1 = !forceFull && settings.range==="q1";
     const vals = f==="tan" ? (q1?PAL_T_Q1:PAL_T) : (q1?PAL_SC_Q1:PAL_SC);
     const pal=$("palette");
     pal.innerHTML="";
@@ -783,6 +950,18 @@
     const nowT=performance.now();
     if(nowT-lastAns<150) return;   // ignore accidental double-taps
     lastAns=nowT;
+    if(review){
+      if(v===cur.ans){
+        review.queue.shift();
+        const q=$("question");
+        q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
+        if(review.queue.length===0){ finishReview(); return; }
+        nextQuestion();
+      }else{
+        showFeedback();   // explain with the diagram, then the same question comes back
+      }
+      return;
+    }
     if(settings.mode==="practice"){
       if(v===cur.ans){
         correctCount++;
@@ -843,7 +1022,7 @@
     $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
-    const prac = settings.mode==="practice";
+    const prac = settings.mode==="practice" || !!review;
     $("overlay").querySelector(".fb-pen").style.display = prac ? "none" : "";
     const note=$("fb-note");
     if(cur.f==="tan"){
@@ -928,16 +1107,23 @@
     step();
   }
 
-  function start(){
+  function start(ctx){
     if(counting) return;   // ignore double-taps during the countdown
+    daily  = (ctx&&ctx.daily)  || null;
+    review = (ctx&&ctx.review) || null;
     time=DUR; score=0; correctCount=0; missCount=0; streak=0; maxStreak=0; misses=[]; prevKey=""; sumSec=0;
-    const prac = settings.mode==="practice";
-    $("score").textContent="0"; $("streak").textContent="";
-    $("timebar").style.display = prac ? "none" : "";
-    $("timenum").style.display = prac ? "none" : "";
-    $("endless").style.display = prac ? "" : "none";
+    const prac = settings.mode==="practice" && !daily && !review;
+    const calm = prac || !!review;                    // no timer, no countdown
+    $("score").textContent = review ? "復習" : "0";
+    $("streak").textContent="";
+    $("timebar").style.display = calm ? "none" : "";
+    $("timenum").style.display = calm ? "none" : "";
+    $("endless").style.display = calm ? "" : "none";
+    $("endless").textContent = review
+      ? "📖 ミスした問題だけが出ます ─ すべて正解でクリア"
+      : "∞ エンドレス ─ 「■ 終了」でいつでも切り上げOK";
     $("pcircle").style.display = prac ? "flex" : "none";
-    $("btn-pause").textContent = prac ? "■ 終了" : "⏸ 中断";
+    $("btn-pause").textContent = calm ? "■ 終了" : "⏸ 中断";
     if(prac) updPracCounts();
     clearInterval(tick);
     $("question").innerHTML="";
@@ -946,10 +1132,10 @@
     $("pop").textContent="";
     $("pop").classList.remove("show");   // stale popup would replay its animation on re-show
     show("scr-game");
-    if(prac){
+    if(calm){
       running=true; paused=false;
       nextQuestion();
-      return;   // no timer / no countdown in practice mode
+      return;   // no timer / no countdown in practice & review
     }
     // reset the timer display to full while counting down
     $("timefill").style.width="100%";
@@ -990,11 +1176,29 @@
     }else{
       st.total+=score;
       st.plays++;
-      st.hist.unshift({t:Date.now(),k:skey(),s:score,a:avgSec});
+      st.hist.unshift({t:Date.now(),k:(daily?("daily-"+daily.ch):skey()),s:score,a:avgSec});
       st.hist=st.hist.slice(0,100);
     }
     saveStats(st);
     updateMyBtn();
+    if(daily){
+      const ch=daily.ch, dd=loadDaily();
+      const seen=new Set(), uniq=[];
+      misses.forEach(m=>{ const kk=m.f+m.deg; if(!seen.has(kk)){ seen.add(kk); uniq.push({f:m.f,deg:m.deg,unit:m.unit}); }});
+      dd[ch]={done:true, score:score, misses:uniq, reviewed:uniq.length===0};
+      const today=dayKey(), yest=dayKey(-1);
+      if(dd.lastStreakDay!==today){
+        dd.streak = (dd.lastStreakDay===yest) ? (dd.streak||0)+1 : 1;
+        dd.lastStreakDay=today;
+      }
+      saveDaily(dd);
+    }
+    // play-count ranking: completed runs with 5+ correct, ranking participants only
+    if(!prac && correctCount>=5 && window.LB && window.LB.enabled){
+      let consented=false;
+      try{ consented=!!localStorage.getItem("tta-consent"); }catch(e){}
+      if(consented) window.LB.addPlay(getHandle()).catch(()=>{});
+    }
     $("r-avg").textContent = avgSec!=null ? "平均回答時間 "+avgSec.toFixed(2)+" 秒/問（正解のみ）" : "";
     if(prac){
       $("r-score").textContent=correctCount;
@@ -1002,6 +1206,13 @@
       $("r-new").style.display="none";
       $("r-best").textContent="";
       $("r-avg").textContent="";
+      $("btn-rank-submit").style.display="none";
+      $("btn-rank-result").style.display="none";
+    }else if(daily){
+      $("r-lab").textContent="スコア";
+      $("r-score").textContent=score;
+      $("r-new").style.display="none";
+      $("r-best").textContent=DAILY_DEF[daily.ch].name+"（1日1回）";
       $("btn-rank-submit").style.display="none";
       $("btn-rank-result").style.display="none";
     }else{
@@ -1040,6 +1251,8 @@
         list.appendChild(d);
       });
     }
+    $("btn-retry").style.display = daily ? "none" : "";   // a daily is once per day
+    daily=null;
     show("scr-result");
     // brief lockout: a finger already falling toward the palette must not hit these buttons
     const lockIds=["btn-retry","btn-home","btn-rank-submit","btn-rank-result"];
@@ -1049,11 +1262,12 @@
 
   $("btn-start").addEventListener("click",start);
   $("btn-retry").addEventListener("click",start);
-  $("btn-home").addEventListener("click",()=>show("scr-start"));
+  $("btn-home").addEventListener("click",()=>{ show("scr-start"); refreshStartUI(); });
 
   // ---------- pause ----------
   $("btn-pause").addEventListener("click",()=>{
     if(!running||paused) return;
+    if(review){ review=null; running=false; show("scr-start"); refreshStartUI(); return; }   // review: leave without the clear mark
     if(settings.mode==="practice"){ finish(); return; }   // in practice: end session
     paused=true;
     $("question").style.visibility="hidden";
@@ -1066,11 +1280,15 @@
     nextQuestion();   // fresh question: no thinking-time exploit
   });
   $("btn-quit").addEventListener("click",()=>{
-    running=false; paused=false;
-    clearInterval(tick);
     $("pause-overlay").classList.remove("show");
     $("question").style.visibility="visible";
+    paused=false;
+    if(daily){ finish(); return; }   // a daily run counts once started: quitting records the score so far
+    review=null;
+    running=false;
+    clearInterval(tick);
     show("scr-start");
+    refreshStartUI();
   });
 
   // ---------- ranking ----------
@@ -1140,8 +1358,9 @@
   function invalidateRankCache(key){
     const c=loadRankCache(); delete c[key]; saveRankCache(c);
   }
+  const RANK_LABEL=k=> k==="plays" ? "プレイ回数（正解5問以上のプレイ・ランキング参加者のみ）" : RANKED[k];
   async function openRanking(key){
-    if(typeof key==="string" && RANKED[key]) rankKey=key;
+    if(typeof key==="string" && (RANKED[key]||key==="plays")) rankKey=key;
     else if(RANKED[skey()]) rankKey=skey();
     document.querySelectorAll("#rank-tabs button").forEach(b=>b.classList.toggle("sel",b.dataset.k===rankKey));
     $("rank-overlay").classList.add("show");
@@ -1149,18 +1368,18 @@
     const cache=loadRankCache(), ent=cache[rankKey];
     if(ent && Date.now()-ent.t<RANK_TTL){
       const ageMin=Math.max(1,Math.round((Date.now()-ent.t)/60000));
-      $("rank-mode").textContent=RANKED[rankKey]+"（"+ageMin+"分前の情報）";
+      $("rank-mode").textContent=RANK_LABEL(rankKey)+"（"+ageMin+"分前の情報）";
       renderRanking(ent.rows, window.LB && window.LB.enabled ? window.LB.uid() : null);
       return;
     }
-    $("rank-mode").textContent=RANKED[rankKey];
+    $("rank-mode").textContent=RANK_LABEL(rankKey);
     $("rank-list").textContent="読み込み中…";
     if(!window.LB || !window.LB.enabled){
       $("rank-list").innerHTML='<div class="rank-sub" style="padding:16px 0">ランキング機能は準備中です</div>';
       return;
     }
     try{
-      const rows=await window.LB.fetchTop(rankKey);
+      const rows = rankKey==="plays" ? await window.LB.fetchPlays() : await window.LB.fetchTop(rankKey);
       cache[rankKey]={t:Date.now(),rows};
       saveRankCache(cache);
       renderRanking(rows, window.LB.uid());
@@ -1221,6 +1440,8 @@
     $("btn-mypage").textContent = BADGES[badgeOf(loadStats().total)][2];
   }
   function fmtModeKey(k){
+    if(k==="daily-d1") return "デイリー数Ⅰ";
+    if(k==="daily-d2") return "デイリー数Ⅱ";
     const [f,u,r]=k.split("-");
     if(RANKED[k]){
       return {"mix-deg-q1":"BASIC","mix-deg-half":"ADVANCED","mix-rad-gen":"EXPERT"}[k];
@@ -1424,6 +1645,21 @@ if(firebaseConfig.apiKey){
         if(snap.exists() && snap.data().score>=score) return {updated:false};
         await setDoc(ref,{handle,score,updatedAt:serverTimestamp()});
         return {updated:true};
+      },
+      async addPlay(handle){
+        const uid=await ensureUid();
+        const ref=doc(db,"lb_plays",uid);
+        const snap=await getDoc(ref);
+        const plays=(snap.exists()?snap.data().plays:0)+1;
+        await setDoc(ref,{handle,plays,updatedAt:serverTimestamp()});
+        return plays;
+      },
+      async fetchPlays(){
+        const qy=query(collection(db,"lb_plays"),orderBy("plays","desc"),limit(100));
+        const ds=await getDocs(qy);
+        const out=[];
+        ds.forEach(d=>{ const v=d.data(); out.push({uid:d.id,handle:v.handle,score:v.plays}); });
+        return out;
       },
       async fetchTop(modeKey){
         const qy=query(collection(db,"lb_"+modeKey),orderBy("score","desc"),limit(100));
