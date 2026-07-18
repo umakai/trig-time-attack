@@ -35,7 +35,7 @@
     display:flex;justify-content:center;
     min-height:100dvh;
   }
-  .app{width:100%;max-width:440px;padding:20px 16px;display:flex;flex-direction:column;min-height:100dvh;}
+  .app{width:100%;max-width:440px;padding:14px 16px 20px;display:flex;flex-direction:column;min-height:100dvh;}
   .screen{display:none;flex-direction:column;flex:1;}
   .screen.active{display:flex;}
 
@@ -183,6 +183,13 @@
     100%{transform:scale(.92);opacity:.15;}
   }
 
+  /* short screens: keep the whole palette reachable */
+  @media (max-height:700px){
+    .app{padding-top:10px;}
+    .question{font-size:54px;}
+    .hud .score{font-size:28px;}
+  }
+
   /* daily challenge */
   .newdot{position:absolute;top:8px;right:10%;width:7px;height:7px;border-radius:50%;background:var(--gold);}
   .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
@@ -220,6 +227,19 @@
     background:var(--panel);font-size:20px;cursor:pointer;
   }
   .mypage-btn:active{background:var(--panel-hi);}
+  .mypage-btn .newdot{top:4px;right:4px;}
+  .mp-news{
+    position:relative;
+    background:rgba(255,201,77,.08);border:1px solid rgba(255,201,77,.4);
+    border-radius:10px;padding:10px 30px 10px 12px;font-size:12.5px;line-height:1.7;margin-bottom:12px;
+  }
+  .mp-news b{color:var(--gold);}
+  .mp-news .nx{
+    position:absolute;top:4px;right:4px;
+    background:none;border:none;color:var(--ink-dim);
+    font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;
+    padding:4px 8px;
+  }
   .mp-badge{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
   .mp-emoji{font-size:38px;}
   .mp-bname{font-size:18px;font-weight:800;color:var(--gold);}
@@ -233,7 +253,16 @@
   .changelog b{color:var(--gold);font-family:ui-monospace,Menlo,monospace;}
 
   /* ---------- game screen ---------- */
-  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .hudrow1{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .hudrow1 .pausebtn{padding:6px 12px;font-size:13px;}
+  .sndbtn{
+    background:var(--panel-hi);color:var(--ink-dim);border:none;border-radius:10px;
+    padding:6px 12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;
+    position:relative;
+  }
+  .sndbtn.on{color:var(--gold);}
+  .sndbtn .newdot{top:3px;right:6px;}
+  .hud{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
   .hud .score{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;}
   .hud .streak{font-size:20px;color:var(--gold);font-weight:800;min-width:64px;text-align:right;}
   .pausebtn{
@@ -243,10 +272,10 @@
   .pausebtn:active{background:var(--panel-hi);}
   .fb.pausebox{border-color:var(--panel-hi);}
   .fb.pausebox .pz-title{font-size:20px;font-weight:800;margin-bottom:16px;}
-  .timebar{height:14px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:6px;}
+  .timebar{height:14px;border-radius:99px;background:var(--panel);overflow:hidden;margin-bottom:4px;}
   .timebar .fill{height:100%;width:100%;background:var(--gold);border-radius:99px;transition:width .1s linear;}
   .timebar .fill.low{background:var(--ng);}
-  .timenum{font-size:20px;font-weight:800;color:var(--ink);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:4px;}
+  .timenum{font-size:20px;font-weight:800;color:var(--ink);text-align:right;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;}
   .endless{font-size:12px;color:var(--ink-dim);text-align:center;margin:2px 0 4px;letter-spacing:.04em;}
 
   .qarea{
@@ -353,7 +382,7 @@
 
   <!-- ===== START ===== -->
   <div class="screen active" id="scr-start">
-    <button class="mypage-btn" id="btn-mypage">🔰</button>
+    <button class="mypage-btn" id="btn-mypage"><span id="mp-ico">🔰</span><span class="newdot" id="new-mp" style="display:none"></span></button>
     <div class="title">三角比 <span class="num">60</span>秒タイムアタック</div>
     <div class="subtitle">有名角の値を、見た瞬間に。</div>
 
@@ -428,15 +457,18 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.2.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.3.0 ｜ 更新履歴</button>
     </div>
   </div>
 
   <!-- ===== GAME ===== -->
   <div class="screen" id="scr-game">
+    <div class="hudrow1">
+      <button class="sndbtn" id="btn-snd"><span id="snd-ico">🔇</span><span class="newdot" id="new-snd" style="display:none"></span></button>
+      <button class="pausebtn" id="btn-pause">⏸ 中断</button>
+    </div>
     <div class="hud">
       <div class="score" id="score">0</div>
-      <button class="pausebtn" id="btn-pause">⏸ 中断</button>
       <div class="streak" id="streak"></div>
     </div>
     <div class="timebar" id="timebar"><div class="fill" id="timefill"></div></div>
@@ -523,6 +555,10 @@
       <button class="rankbtn" id="btn-reroll" style="padding:7px 14px;font-size:13px">🎲 名前を引き直す</button>
       <div class="rank-sub" id="reroll-note" style="margin-top:5px"></div>
     </div>
+    <div class="mp-news" id="mp-news">
+      <button class="nx" id="mp-news-x">×</button>
+      📢 <b>NEW</b>　🔊 効果音が追加されました！下の「⚙️ 設定」からONにできます（音色は2種類・試聴つき）。ゲーム画面の🔊ボタンでいつでも消音OK。
+    </div>
     <div class="mp-badge">
       <span class="mp-emoji" id="mp-emoji">🔰</span>
       <div>
@@ -544,6 +580,16 @@
     <div id="mp-top"></div>
     <div class="mp-sec">最近のプレイ</div>
     <div id="mp-recent"></div>
+    <div class="mp-sec">⚙️ 設定</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <span style="font-size:13px;font-weight:700;white-space:nowrap">効果音</span>
+      <div class="seg" id="mp-snd-seg" style="flex:1">
+        <button data-v="off">OFF</button>
+        <button data-v="b">ゲーム機</button>
+        <button data-v="c">やわらか</button>
+      </div>
+    </div>
+    <div class="rank-sub" style="text-align:left;margin-bottom:2px">ゲーム画面の🔊ボタンでいつでも消音できます</div>
     <div class="btnrow">
       <button class="btn-home" id="btn-mp-close">閉じる</button>
     </div>
@@ -571,6 +617,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.3.0</b> 🔊 効果音を追加！マイページの「⚙️ 設定」からON（音色は2種類から選択・試聴つき）。ゲーム画面の🔊ボタンでいつでもワンタッチ消音できます。画面上部の配置も整理しました。</p>
     <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習、連続日数🔥、全員が同じ問題で競う「今日のランキング」も。マイページには「回数ランキング」を追加しました（正解5問以上のプレイ数・ランキング参加者が対象）。</p>
     <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>
     <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
@@ -725,6 +772,51 @@
   });
   document.addEventListener("dblclick",e=>e.preventDefault());
 
+  // ---------- sound effects (synthesized in-browser; default OFF) ----------
+  let audioCtx=null;
+  function sndPref(){ try{ return localStorage.getItem("tta-sound")||"off"; }catch(e){ return "off"; } }
+  function sndLastKit(){ try{ return localStorage.getItem("tta-sound-kit")||"b"; }catch(e){ return "b"; } }
+  function setSndPref(v){
+    try{
+      localStorage.setItem("tta-sound",v);
+      if(v!=="off") localStorage.setItem("tta-sound-kit",v);
+    }catch(e){}
+    updateSndUI();
+  }
+  function sndTone(freq,dur,type,vol,when,slideTo){
+    try{
+      if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      if(audioCtx.state==="suspended") audioCtx.resume();
+      const t=audioCtx.currentTime+(when||0);
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type=type; o.frequency.setValueAtTime(freq,t);
+      if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(vol,t+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t+dur+0.02);
+    }catch(e){}
+  }
+  function playOK(){
+    const p=sndPref();
+    if(p==="b"){ sndTone(988,0.07,"square",0.12); sndTone(1319,0.10,"square",0.12,0.07); }
+    else if(p==="c"){ sndTone(1047,0.18,"sine",0.22,0,1040); sndTone(1568,0.16,"sine",0.10,0.01); }
+  }
+  function playNG(){
+    const p=sndPref();
+    if(p==="b"){ sndTone(494,0.35,"square",0.06); sndTone(466,0.35,"square",0.06); }
+    else if(p==="c"){ sndTone(349,0.10,"sine",0.24,0,300); sndTone(262,0.15,"sine",0.24,0.09,160); }
+  }
+  function updateSndUI(){
+    const p=sndPref();
+    const b=$("btn-snd");
+    $("snd-ico").textContent = p==="off" ? "🔇" : "🔊";   // update the icon span only: textContent on the button would wipe the NEW dot
+    b.classList.toggle("on", p!=="off");
+    const seg=$("mp-snd-seg");
+    if(seg) seg.querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x.dataset.v===p));
+  }
+
   function show(id){
     document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
     $(id).classList.add("active");
@@ -800,6 +892,9 @@
   refreshStartUI();
   updateBestView();
   try{ if(!localStorage.getItem("tta-seen-daily")) $("new-daily").style.display=""; }catch(e){}
+  try{ if(!localStorage.getItem("tta-seen-snd")) $("new-snd").style.display=""; }catch(e){}
+  const NEWS_VER="v1.3.0";   // bump when mp-news text changes
+  try{ if(localStorage.getItem("tta-news-seen")!==NEWS_VER) $("new-mp").style.display=""; }catch(e){}
 
   function sq(s){
     return String(s).replace(/√(\d+)/g,'<span class="sqrt">√<span class="rad">$1</span></span>');
@@ -953,18 +1048,21 @@
     lastAns=nowT;
     if(review){
       if(v===cur.ans){
+        playOK();
         review.queue.shift();
         const q=$("question");
         q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
         if(review.queue.length===0){ finishReview(); return; }
         nextQuestion();
       }else{
+        playNG();
         showFeedback();   // explain with the diagram, then the same question comes back
       }
       return;
     }
     if(settings.mode==="practice"){
       if(v===cur.ans){
+        playOK();
         correctCount++;
         streak++; maxStreak=Math.max(maxStreak,streak);
         updPracCounts();
@@ -972,6 +1070,7 @@
         q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
         nextQuestion();
       }else{
+        playNG();
         missCount++;
         streak=0;
         updPracCounts();
@@ -981,6 +1080,7 @@
       return;
     }
     if(v===cur.ans){
+      playOK();
       const sec=(performance.now()-qStart)/1000;
       const fast=sec<=2.0;
       sumSec+=sec;
@@ -995,6 +1095,7 @@
       q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
       nextQuestion();
     }else{
+      playNG();
       missCount++; streak=0;
       score=Math.max(0,score-100);
       time=Math.max(0,time-3);
@@ -1436,6 +1537,19 @@
     $("mp-overlay").classList.remove("show");
     openRanking("plays");
   });
+  $("btn-snd").addEventListener("click",()=>{
+    try{ localStorage.setItem("tta-seen-snd","1"); }catch(e){}
+    $("new-snd").style.display="none";
+    setSndPref(sndPref()==="off" ? sndLastKit() : "off");
+    if(sndPref()!=="off") playOK();   // audible confirmation
+  });
+  $("mp-snd-seg").querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      setSndPref(b.dataset.v);
+      if(b.dataset.v!=="off"){ playOK(); setTimeout(playNG,500); }   // preview the pair
+    });
+  });
+  updateSndUI();
   $("btn-rank-close").addEventListener("click",()=>$("rank-overlay").classList.remove("show"));
   $("btn-rank-submit").addEventListener("click",async ()=>{
     const k=skey();
@@ -1483,7 +1597,7 @@
     return i;
   }
   function updateMyBtn(){
-    $("btn-mypage").textContent = BADGES[badgeOf(loadStats().total)][2];
+    $("mp-ico").textContent = BADGES[badgeOf(loadStats().total)][2];   // icon span only: textContent on the button would wipe the NEW dot
   }
   function fmtModeKey(k){
     if(k==="daily-d1") return "デイリー数Ⅰ";
@@ -1590,6 +1704,11 @@
   }
 
   function openMyPage(){
+    try{ localStorage.setItem("tta-news-seen",NEWS_VER); }catch(e){}
+    $("new-mp").style.display="none";
+    let newsClosed=false;
+    try{ newsClosed = localStorage.getItem("tta-news-closed")===NEWS_VER; }catch(e){}
+    $("mp-news").style.display = newsClosed ? "none" : "";
     const st=loadStats();
     $("mp-handle").textContent="👤 "+getHandle();
     refreshRerollUI();
@@ -1621,6 +1740,10 @@
     $("mp-overlay").classList.add("show");
   }
   $("btn-mypage").addEventListener("click",openMyPage);
+  $("mp-news-x").addEventListener("click",()=>{
+    try{ localStorage.setItem("tta-news-closed",NEWS_VER); }catch(e){}
+    $("mp-news").style.display="none";
+  });
   $("btn-mp-close").addEventListener("click",()=>$("mp-overlay").classList.remove("show"));
   updateMyBtn();
 
