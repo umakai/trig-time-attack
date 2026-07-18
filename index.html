@@ -383,7 +383,7 @@
   <!-- ===== START ===== -->
   <div class="screen active" id="scr-start">
     <button class="mypage-btn" id="btn-mypage"><span id="mp-ico">🔰</span><span class="newdot" id="new-mp" style="display:none"></span></button>
-    <div class="title">三角比 <span class="num">60</span>秒タイムアタック</div>
+    <div class="title">三角比タイムアタック</div>
     <div class="subtitle">有名角の値を、見た瞬間に。</div>
 
     <div class="seg modetabs" id="seg-mode">
@@ -457,7 +457,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.3.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.3.1 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -617,10 +617,11 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.3.1</b> 持ち時間を70秒に統一しました（端末によってわずかに時間が延びる現象を修正し、全員同じ条件に）。タイマーの精度も向上。</p>
     <p><b>v1.3.0</b> 🔊 効果音を追加！マイページの「⚙️ 設定」からON（音色は2種類から選択・試聴つき）。ゲーム画面の🔊ボタンでいつでもワンタッチ消音できます。画面上部の配置も整理しました。</p>
     <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習、連続日数🔥、全員が同じ問題で競う「今日のランキング」も。マイページには「回数ランキング」を追加しました（正解5問以上のプレイ数・ランキング参加者が対象）。</p>
     <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>
-    <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
+    <p><b>v1.0.0</b> 公開！⚡タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
       <button class="btn-home" id="btn-ver-close">閉じる</button>
     </div>
@@ -647,7 +648,7 @@
   const PAL_T=["-√3","-1","-1/√3","0","1/√3","1","√3","none"];
   const PAL_T_Q1=["0","1/√3","1","√3","none"];
 
-  const DUR=60.0;      // seconds
+  const DUR=70.0;      // seconds (unified real-time; matches the conditions the hall records were set under)
   const FB_MS=1800;    // wrong-answer review time
   const RANKED={
     "mix-deg-q1":"関数ミックス・度数法・30°·45°·60°",
@@ -660,6 +661,13 @@
   let daily=null;    // active daily run: {ch:"d1"|"d2", rng}
   let review=null;   // active review run: {ch, queue:[{f,deg,unit},...]}
   let time=DUR, running=false, paused=false, tick=null;
+  let endAt=0, pausedAt=0;   // real-clock deadline; setInterval drift must not stretch the game
+  function setPaused(v){
+    if(v===paused) return;
+    paused=v;
+    if(v){ pausedAt=performance.now(); }
+    else if(pausedAt){ endAt+=performance.now()-pausedAt; pausedAt=0; }
+  }
   let score=0, correctCount=0, missCount=0, streak=0, maxStreak=0, qStart=0, sumSec=0;
   let cur=null, prevKey="";
   let misses=[];
@@ -695,6 +703,7 @@
   }
   function saveDaily(d){ try{ localStorage.setItem("tta-daily",JSON.stringify(d)); }catch(e){} }
   function renderDaily(){
+    sendDailyScore("d1"); sendDailyScore("d2");   // self-heal: push any unsent result of today
     const d=loadDaily();
     const dt=new Date(Date.now()-4*3600*1000);
     $("ddate").innerHTML=(dt.getMonth()+1)+"/"+dt.getDate()+"（"+"日月火水木金土"[dt.getDay()]+"）の問題<span>朝4:00 更新</span>";
@@ -737,6 +746,22 @@
     const d=loadDaily();
     if(!d[ch]||!d[ch].done||!d[ch].misses||!d[ch].misses.length) return;
     start({review:{ch, queue:d[ch].misses.slice()}});
+  }
+  function markDailySent(ch){
+    const d=loadDaily();
+    if(d[ch]){ d[ch].sent=true; saveDaily(d); }
+  }
+  function sendDailyScore(ch){
+    const d=loadDaily(), st=d[ch];
+    if(!st || !st.done || st.sent) return;
+    if(!(window.LB && window.LB.enabled)) return;
+    let c=false;
+    try{ c=!!localStorage.getItem("tta-consent"); }catch(e){}
+    if(!c) return;
+    window.LB.addDailyScore(dayKey(), ch, st.score, getHandle())
+      .then(()=>{ markDailySent(ch); invalidateRankCache("daily-"+ch+"@"+dayKey()); })
+      .catch(e=>{ if(e && (e.code==="permission-denied" || e.code==="already-exists")) markDailySent(ch); });
+      // any other failure (offline etc.): stays unsent and retries next time the daily tab opens
   }
   function finishReview(){
     const ch=review.ch;
@@ -1098,7 +1123,8 @@
       playNG();
       missCount++; streak=0;
       score=Math.max(0,score-100);
-      time=Math.max(0,time-3);
+      endAt-=3000;
+      time=Math.max(0,(endAt-performance.now())/1000);
       $("score").textContent=score;
       $("streak").textContent="";
       $("timefill").style.width=(time/DUR*100)+"%";
@@ -1120,7 +1146,7 @@
   }
 
   function showFeedback(){
-    paused=true;
+    setPaused(true);
     $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
@@ -1141,14 +1167,14 @@
     $("overlay").classList.add("show");
     setTimeout(()=>{
       $("overlay").classList.remove("show");
-      if(!running){ paused=false; return; }
+      if(!running){ setPaused(false); return; }
       if(document.hidden){
         // app went to background during the review: hand off to pause
         $("question").style.visibility="hidden";
         $("pause-overlay").classList.add("show");
         return;   // stays paused until the user taps 再開
       }
-      paused=false;
+      setPaused(false);
       nextQuestion();
     },FB_MS);
   }
@@ -1243,12 +1269,13 @@
     $("timefill").style.width="100%";
     $("timefill").classList.remove("low");
     $("timenum").textContent=DUR.toFixed(1);
-    running=false; paused=false;
+    running=false; paused=false; pausedAt=0;
     runCountdown(()=>{
       running=true;
+      endAt=performance.now()+DUR*1000;
       if(document.hidden){
         // app went to background during the countdown: start paused
-        paused=true;
+        setPaused(true);
         $("question").style.visibility="hidden";
         $("pause-overlay").classList.add("show");
       }else{
@@ -1256,7 +1283,7 @@
       }
       tick=setInterval(()=>{
         if(!running||paused) return;
-        time-=0.1;
+        time=(endAt-performance.now())/1000;
         if(time<=0){ time=0; finish(); }
         const fill=$("timefill");
         fill.style.width=(time/DUR*100)+"%";
@@ -1288,21 +1315,14 @@
       const ch=daily.ch, dd=loadDaily();
       const seen=new Set(), uniq=[];
       misses.forEach(m=>{ const kk=m.f+m.deg; if(!seen.has(kk)){ seen.add(kk); uniq.push({f:m.f,deg:m.deg,unit:m.unit}); }});
-      dd[ch]={done:true, score:score, misses:uniq, reviewed:uniq.length===0};
+      dd[ch]={done:true, score:score, misses:uniq, reviewed:uniq.length===0, sent:false};
       const today=dayKey(), yest=dayKey(-1);
       if(dd.lastStreakDay!==today){
         dd.streak = (dd.lastStreakDay===yest) ? (dd.streak||0)+1 : 1;
         dd.lastStreakDay=today;
       }
       saveDaily(dd);
-      // today's ranking: auto-submit for ranking participants (create-only, one shot per day)
-      if(window.LB && window.LB.enabled){
-        let c1=false;
-        try{ c1=!!localStorage.getItem("tta-consent"); }catch(e){}
-        if(c1) window.LB.addDailyScore(dayKey(), ch, score, getHandle())
-          .then(()=>invalidateRankCache("daily-"+ch+"@"+dayKey()))
-          .catch(()=>{});
-      }
+      sendDailyScore(ch);   // today's ranking (participants only); failures retry from the daily tab
     }
     // play-count ranking: qualified runs (5+ correct), ranking participants only
     if(!prac && correctCount>=5 && window.LB && window.LB.enabled){
@@ -1382,20 +1402,20 @@
     if(!running||paused) return;
     if(review){ review=null; running=false; show("scr-start"); refreshStartUI(); return; }   // review: leave without the clear mark
     if(settings.mode==="practice"){ finish(); return; }   // in practice: end session
-    paused=true;
+    setPaused(true);
     $("question").style.visibility="hidden";
     $("pause-overlay").classList.add("show");
   });
   $("btn-resume").addEventListener("click",()=>{
     $("pause-overlay").classList.remove("show");
     $("question").style.visibility="visible";
-    paused=false;
+    setPaused(false);
     nextQuestion();   // fresh question: no thinking-time exploit
   });
   $("btn-quit").addEventListener("click",()=>{
     $("pause-overlay").classList.remove("show");
     $("question").style.visibility="visible";
-    paused=false;
+    setPaused(false);
     if(daily){ finish(); return; }   // a daily run counts once started: quitting records the score so far
     review=null;
     running=false;
@@ -1769,7 +1789,7 @@
   // auto-pause when the tab/app goes to background (e.g. phone call)
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden && running && !paused){
-      paused=true;
+      setPaused(true);
       $("question").style.visibility="hidden";
       $("pause-overlay").classList.add("show");
     }
