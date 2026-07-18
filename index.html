@@ -421,6 +421,7 @@
         <div class="streakpill" id="dstreak" style="display:none"></div>
       </div>
       <div id="daily-cards"></div>
+      <button class="rankbtn" id="btn-daily-rank" style="width:100%;margin-bottom:10px">🏆 今日のランキング</button>
       <div class="dnote">全員が同じ問題・同じ順番に挑戦します。やり直しはできません。<br>どちらか1つ完走すると連続日数が伸びます。</div>
     </div>
 
@@ -535,6 +536,7 @@
       <div class="stat"><div class="v" id="mp-plays">0</div><div class="k">プレイ</div></div>
       <div class="stat"><div class="v" id="mp-pract">0</div><div class="k">練習</div></div>
     </div>
+    <button class="rankbtn" id="btn-mp-plays" style="width:100%;margin-bottom:6px">🏆 回数ランキングを見る</button>
     <div class="mp-sec">平均回答時間の推移（ランクモード・正解のみ）</div>
     <div class="seg" id="mp-chart-tabs" style="margin-bottom:6px"></div>
     <div id="mp-chart"></div>
@@ -556,7 +558,6 @@
       <button data-k="mix-deg-q1">BASIC</button>
       <button data-k="mix-deg-half">ADVANCED</button>
       <button data-k="mix-rad-gen">EXPERT</button>
-      <button data-k="plays">回数</button>
     </div>
     <div class="rank-sub" id="rank-mode"></div>
     <div class="rank-list" id="rank-list">読み込み中…</div>
@@ -570,7 +571,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
-    <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習と連続日数🔥も。ランキングに「回数」部門を追加しました（正解5問以上のプレイをカウント・ランキング参加者が対象）。</p>
+    <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習、連続日数🔥、全員が同じ問題で競う「今日のランキング」も。マイページには「回数ランキング」を追加しました（正解5問以上のプレイ数・ランキング参加者が対象）。</p>
     <p><b>v1.1.0</b> 練習モードの単位円が出題範囲に合わせて拡大表示されるように（30·45·60°は第1象限、0°〜180°は上半分）。結果画面からランキングを見られるようになりました。</p>
     <p><b>v1.0.0</b> 公開！⚡60秒タイムアタック（ランクモード＆オンラインランキング）、📖単位円つき練習モード、👤マイページ（バッジ・自己ベスト・回答スピードのグラフ）を搭載しています。</p>
     <div class="btnrow">
@@ -1176,6 +1177,7 @@
     }else{
       st.total+=score;
       st.plays++;
+      if(correctCount>=5) st.qplays=(st.qplays||0)+1;
       st.hist.unshift({t:Date.now(),k:(daily?("daily-"+daily.ch):skey()),s:score,a:avgSec});
       st.hist=st.hist.slice(0,100);
     }
@@ -1192,12 +1194,22 @@
         dd.lastStreakDay=today;
       }
       saveDaily(dd);
+      // today's ranking: auto-submit for ranking participants (create-only, one shot per day)
+      if(window.LB && window.LB.enabled){
+        let c1=false;
+        try{ c1=!!localStorage.getItem("tta-consent"); }catch(e){}
+        if(c1) window.LB.addDailyScore(dayKey(), ch, score, getHandle())
+          .then(()=>invalidateRankCache("daily-"+ch+"@"+dayKey()))
+          .catch(()=>{});
+      }
     }
-    // play-count ranking: completed runs with 5+ correct, ranking participants only
+    // play-count ranking: qualified runs (5+ correct), ranking participants only
     if(!prac && correctCount>=5 && window.LB && window.LB.enabled){
       let consented=false;
       try{ consented=!!localStorage.getItem("tta-consent"); }catch(e){}
-      if(consented) window.LB.addPlay(getHandle()).catch(()=>{});
+      if(consented) window.LB.addPlay(getHandle(), st.qplays)
+        .then(()=>invalidateRankCache("plays"))
+        .catch(()=>{});
     }
     $("r-avg").textContent = avgSec!=null ? "平均回答時間 "+avgSec.toFixed(2)+" 秒/問（正解のみ）" : "";
     if(prac){
@@ -1358,14 +1370,42 @@
   function invalidateRankCache(key){
     const c=loadRankCache(); delete c[key]; saveRankCache(c);
   }
-  const RANK_LABEL=k=> k==="plays" ? "プレイ回数（正解5問以上のプレイ・ランキング参加者のみ）" : RANKED[k];
+  const RANK_SETS={
+    main:[["mix-deg-q1","BASIC"],["mix-deg-half","ADVANCED"],["mix-rad-gen","EXPERT"]],
+    daily:[["daily-d1","今日の数Ⅰ"],["daily-d2","今日の数Ⅱ"]],
+    plays:[["plays","回数"]]
+  };
+  function RANK_LABEL(k){
+    if(k==="plays") return "プレイ回数（正解5問以上のプレイ・ランキング参加者のみ）";
+    if(k==="daily-d1"||k==="daily-d2"){
+      const dt=new Date(Date.now()-4*3600*1000);
+      return DAILY_DEF[k.slice(6)].name+"（"+(dt.getMonth()+1)+"/"+dt.getDate()+"・全員同じ問題）";
+    }
+    return RANKED[k];
+  }
+  function rankSetOf(k){ return k==="plays" ? "plays" : k.indexOf("daily-")===0 ? "daily" : "main"; }
+  function renderRankTabs(){
+    const set=RANK_SETS[rankSetOf(rankKey)];
+    const tabs=$("rank-tabs");
+    tabs.style.display = set.length>1 ? "" : "none";
+    tabs.innerHTML="";
+    set.forEach(pair=>{
+      const b=document.createElement("button");
+      b.textContent=pair[1];
+      if(pair[0]===rankKey) b.classList.add("sel");
+      b.addEventListener("click",()=>openRanking(pair[0]));
+      tabs.appendChild(b);
+    });
+  }
+  function rankCacheKey(k){ return k.indexOf("daily-")===0 ? k+"@"+dayKey() : k; }
   async function openRanking(key){
-    if(typeof key==="string" && (RANKED[key]||key==="plays")) rankKey=key;
+    if(typeof key==="string" && (RANKED[key]||key==="plays"||key.indexOf("daily-")===0)) rankKey=key;
     else if(RANKED[skey()]) rankKey=skey();
-    document.querySelectorAll("#rank-tabs button").forEach(b=>b.classList.toggle("sel",b.dataset.k===rankKey));
+    renderRankTabs();
     $("rank-overlay").classList.add("show");
     // serve from cache if fresh
-    const cache=loadRankCache(), ent=cache[rankKey];
+    const ck=rankCacheKey(rankKey);
+    const cache=loadRankCache(), ent=cache[ck];
     if(ent && Date.now()-ent.t<RANK_TTL){
       const ageMin=Math.max(1,Math.round((Date.now()-ent.t)/60000));
       $("rank-mode").textContent=RANK_LABEL(rankKey)+"（"+ageMin+"分前の情報）";
@@ -1379,19 +1419,23 @@
       return;
     }
     try{
-      const rows = rankKey==="plays" ? await window.LB.fetchPlays() : await window.LB.fetchTop(rankKey);
-      cache[rankKey]={t:Date.now(),rows};
+      const rows = rankKey==="plays" ? await window.LB.fetchPlays()
+                 : rankKey.indexOf("daily-")===0 ? await window.LB.fetchDaily(dayKey(), rankKey.slice(6))
+                 : await window.LB.fetchTop(rankKey);
+      cache[ck]={t:Date.now(),rows};
       saveRankCache(cache);
       renderRanking(rows, window.LB.uid());
     }catch(e){
       $("rank-list").innerHTML='<div class="rank-sub" style="padding:16px 0">通信エラーが発生しました。時間をおいて再度お試しください。</div>';
     }
   }
-  document.querySelectorAll("#rank-tabs button").forEach(b=>{
-    b.addEventListener("click",()=>openRanking(b.dataset.k));
+  $("btn-rank").addEventListener("click",()=>openRanking(RANKED[skey()]?skey():"mix-deg-q1"));
+  $("btn-rank-result").addEventListener("click",()=>openRanking(RANKED[skey()]?skey():"mix-deg-q1"));
+  $("btn-daily-rank").addEventListener("click",()=>openRanking("daily-d1"));
+  $("btn-mp-plays").addEventListener("click",()=>{
+    $("mp-overlay").classList.remove("show");
+    openRanking("plays");
   });
-  $("btn-rank").addEventListener("click",()=>openRanking());
-  $("btn-rank-result").addEventListener("click",()=>openRanking());
   $("btn-rank-close").addEventListener("click",()=>$("rank-overlay").classList.remove("show"));
   $("btn-rank-submit").addEventListener("click",async ()=>{
     const k=skey();
@@ -1426,7 +1470,9 @@
   function loadStats(){
     let s={};
     try{ s=JSON.parse(localStorage.getItem("tta-stats")||"{}"); }catch(e){}
-    return Object.assign({total:0,plays:0,pract:0,hist:[]},s);
+    const m=Object.assign({total:0,plays:0,pract:0,hist:[]},s);
+    if(m.qplays===undefined) m.qplays=m.plays;   // retroactive seed: count past runs once
+    return m;
   }
   function saveStats(s){
     try{ localStorage.setItem("tta-stats",JSON.stringify(s)); }catch(e){}
@@ -1646,13 +1692,23 @@ if(firebaseConfig.apiKey){
         await setDoc(ref,{handle,score,updatedAt:serverTimestamp()});
         return {updated:true};
       },
-      async addPlay(handle){
+      async addPlay(handle,total){
         const uid=await ensureUid();
         const ref=doc(db,"lb_plays",uid);
         const snap=await getDoc(ref);
-        const plays=(snap.exists()?snap.data().plays:0)+1;
-        await setDoc(ref,{handle,plays,updatedAt:serverTimestamp()});
-        return plays;
+        if(snap.exists() && snap.data().plays>=total) return;
+        await setDoc(ref,{handle,plays:total,updatedAt:serverTimestamp()});
+      },
+      async addDailyScore(dk,ch,scoreVal,handle){
+        const uid=await ensureUid();
+        await setDoc(doc(db,"daily_"+dk+"_"+ch,uid),{handle,score:scoreVal,updatedAt:serverTimestamp()});
+      },
+      async fetchDaily(dk,ch){
+        const qy=query(collection(db,"daily_"+dk+"_"+ch),orderBy("score","desc"),limit(100));
+        const ds=await getDocs(qy);
+        const out=[];
+        ds.forEach(d=>out.push({uid:d.id,...d.data()}));
+        return out;
       },
       async fetchPlays(){
         const qy=query(collection(db,"lb_plays"),orderBy("plays","desc"),limit(100));
