@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>三角比タイムアタック</title>
+<title>三角比 瞬答タイムアタック</title>
 <style>
   :root{
     --bg:#14162B;
@@ -42,6 +42,7 @@
   /* ---------- start screen ---------- */
   .title{font-size:26px;font-weight:800;letter-spacing:.04em;margin:12px 0 2px;}
   .title .num{color:var(--gold);font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  .title .accent{color:var(--gold);}
   .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:18px;}
   .bestline{color:var(--gold);font-size:14px;font-weight:700;text-align:center;margin-bottom:8px;min-height:18px;font-family:ui-monospace,Menlo,monospace;}
 
@@ -383,7 +384,7 @@
   <!-- ===== START ===== -->
   <div class="screen active" id="scr-start">
     <button class="mypage-btn" id="btn-mypage"><span id="mp-ico">🔰</span><span class="newdot" id="new-mp" style="display:none"></span></button>
-    <div class="title">三角比タイムアタック</div>
+    <div class="title">三角比 <span class="accent">瞬答</span>タイムアタック</div>
     <div class="subtitle">有名角の値を、見た瞬間に。</div>
 
     <div class="seg modetabs" id="seg-mode">
@@ -472,7 +473,7 @@
       <div class="streak" id="streak"></div>
     </div>
     <div class="timebar" id="timebar"><div class="fill" id="timefill"></div></div>
-    <div class="timenum" id="timenum">60.0</div>
+    <div class="timenum" id="timenum">70.0</div>
     <div class="endless" id="endless" style="display:none">∞ エンドレス ─ 「■ 終了」でいつでも切り上げOK</div>
     <div id="pcircle"></div>
     <div class="qarea"><div class="question" id="question"></div><div class="pop" id="pop"></div></div>
