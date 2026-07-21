@@ -73,11 +73,11 @@
   .scard-title::before{
     content:"";width:3px;height:13px;border-radius:2px;background:var(--gold);
   }
-  .srow{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .srow{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
   .srow:last-child{margin-bottom:0;}
   .srow .sl{width:44px;flex-shrink:0;font-size:12px;color:var(--ink-dim);font-weight:700;}
   .srow .seg{flex:1;}
-  .srow .seg button{padding:10px 2px;font-size:13px;}
+  .srow .seg button{padding:9px 2px;font-size:13px;}
   #seg-range button{font-size:11.5px;padding-left:1px;padding-right:1px;}
   .setting{margin-bottom:18px;}
   .setting-label{font-size:12px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;}
@@ -315,6 +315,30 @@
     display:flex;align-items:center;justify-content:center;
   }
   .palette button:active{background:var(--panel-hi);}
+  .palette button.sel{
+    outline:2.5px solid var(--gold);outline-offset:-2.5px;
+    background:rgba(255,201,77,.14);position:relative;
+  }
+  .nonebtn{
+    width:100%;padding:11px;border:1.5px dashed var(--ink-dim);border-radius:10px;
+    background:none;color:var(--ink-dim);font-size:14px;font-weight:700;
+    font-family:inherit;cursor:pointer;margin-top:10px;
+  }
+  .nonebtn.sel{border-color:var(--gold);border-style:solid;color:var(--gold);background:rgba(255,201,77,.10);}
+  .nonebtn.dim{opacity:.35;}
+  .confirmbtn{
+    width:100%;padding:13px;border:none;border-radius:10px;
+    background:var(--gold);color:#1A1400;font-size:15px;font-weight:800;
+    font-family:inherit;cursor:pointer;margin-top:8px;
+  }
+  .confirmbtn:disabled{opacity:.35;}
+  .dir-explain{
+    background:var(--bg);border:1px solid var(--panel-hi);border-radius:9px;
+    padding:7px 10px;margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--ink-dim);
+  }
+  .dir-explain b{color:var(--ink);}
+  .dir-explain .ex{color:var(--gold);font-weight:700;}
+  .dir-explain .q{font-family:ui-monospace,Menlo,monospace;}
   .palette button.small{font-size:15px;font-family:inherit;}
 
   /* ---------- feedback overlay ---------- */
@@ -396,6 +420,14 @@
     <div class="scard">
       <div class="scard-title">出題設定</div>
       <div class="srow">
+        <div class="sl">出題の向き</div>
+        <div class="seg" id="seg-dir">
+          <button data-v="fwd" class="sel">→ 順引き</button>
+          <button data-v="rev">← 逆引き</button>
+        </div>
+      </div>
+      <div class="dir-explain" id="dir-explain"></div>
+      <div class="srow">
         <div class="sl">関数</div>
         <div class="seg" id="seg-func">
           <button data-v="sin">sin</button>
@@ -419,6 +451,7 @@
           <button data-v="half" class="sel">0°〜180°</button>
           <button data-v="full">0°〜360°</button>
           <button data-v="gen">一般角</button>
+          <button data-v="wide" style="display:none">−2π〜4π</button>
         </div>
       </div>
       <div class="srow" id="pcircle-wrap" style="display:none">
@@ -443,6 +476,17 @@
       <button class="rankbtn" id="btn-rank">🏆 ランキングを見る</button>
     </div>
 
+    <div class="setting" id="chips-rev-wrap" style="display:none">
+      <div class="rank-head">
+        <span class="rank-name">🔄 逆引きチャレンジ</span>
+        <span class="rank-desc">値→角度</span>
+      </div>
+      <div class="chips">
+        <button class="chip" data-preset="rev1"><b>逆引き・数Ⅰ</b><span>度数法・0°〜180°</span></button>
+        <button class="chip" data-preset="rev2"><b>逆引き・数Ⅱ</b><span>弧度法・−2π〜4π</span></button>
+      </div>
+    </div>
+
     <div id="daily-panel" style="display:none">
       <div class="dhead">
         <div class="ddate" id="ddate"></div>
@@ -456,7 +500,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.3.2 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.4.0 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -476,6 +520,10 @@
     <div id="pcircle"></div>
     <div class="qarea"><div class="question" id="question"></div><div class="pop" id="pop"></div></div>
     <div class="palette" id="palette"></div>
+    <div id="rev-actions" style="display:none">
+      <button class="nonebtn" id="btn-none">⊘ この中にはない</button>
+      <button class="confirmbtn" id="btn-confirm">解答する（0個選択中）</button>
+    </div>
   </div>
 
   <!-- ===== RESULT ===== -->
@@ -510,7 +558,7 @@
   <div class="fb">
     <div class="fb-q" id="fb-q"></div>
     <div class="fb-a">正解は <b id="fb-a"></b></div>
-    <div class="fb-pen">−100点 ／ 残り時間 −3秒</div>
+    <div class="fb-pen" id="fb-pen">−100点 ／ 残り時間 −3秒</div>
     <div id="fb-circle"></div>
     <div class="fb-note" id="fb-note"></div>
   </div>
@@ -556,7 +604,7 @@
     </div>
     <div class="mp-news" id="mp-news">
       <button class="nx" id="mp-news-x">×</button>
-      📢 <b>NEW</b>　🔊 効果音が追加されました！下の「⚙️ 設定」からONにできます（音色は2種類・試聴つき）。ゲーム画面の🔊ボタンでいつでも消音OK。
+      📢 <b>NEW</b>　🔄 <b>逆引きモード</b>が登場！値から角度を「すべて」探す新しい挑戦。ホームの「出題の向き」→「← 逆引き」から。タイムアタックでも練習でも遊べます。
     </div>
     <div class="mp-badge">
       <span class="mp-emoji" id="mp-emoji">🔰</span>
@@ -616,6 +664,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.4.0</b> 🔄 <b>逆引きモード</b>を追加！「sin θ = √3/2 になる角は？」——値から角度を全部探す新しい遊び方。出題設定の「出題の向き」から切り替え、タイムアタックでも練習でも遊べます（記録は端末内のみ）。</p>
     <p><b>v1.3.2</b> 分数・根号・πの表示を数式組版に対応し、より読みやすくなりました。</p>
     <p><b>v1.3.1</b> 持ち時間を70秒に統一しました（端末によってわずかに時間が延びる現象を修正し、全員同じ条件に）。タイマーの精度も向上。</p>
     <p><b>v1.3.0</b> 🔊 効果音を追加！マイページの「⚙️ 設定」からON（音色は2種類から選択・試聴つき）。ゲーム画面の🔊ボタンでいつでもワンタッチ消音できます。画面上部の配置も整理しました。</p>
@@ -657,7 +706,7 @@
   };
 
   // ---------- state ----------
-  const settings={func:"mix",unit:"deg",range:"half",mode:"attack",pcircle:"on"};
+  const settings={dir:"fwd",func:"mix",unit:"deg",range:"half",mode:"attack",pcircle:"on"};
   let daily=null;    // active daily run: {ch:"d1"|"d2", rng}
   let review=null;   // active review run: {ch, queue:[{f,deg,unit},...]}
   let time=DUR, running=false, paused=false, tick=null;
@@ -774,7 +823,7 @@
   }
 
   // ---------- best score (per device, per mode) ----------
-  function skey(){ return settings.func+"-"+settings.unit+"-"+settings.range; }
+  function skey(){ return (settings.dir==="rev"?"rev-":"")+settings.func+"-"+settings.unit+"-"+settings.range; }
   function loadBests(){
     try{ return JSON.parse(localStorage.getItem("tta-best")||"{}"); }
     catch(e){ return {}; }
@@ -862,13 +911,16 @@
   segInit("seg-unit","unit");
   segInit("seg-range","range");
   segInit("seg-mode","mode");
+  segInit("seg-dir","dir");
   segInit("seg-pcircle","pcircle");
 
   // ---------- rank-mode preset chips ----------
   const PRESETS={
-    basic:   {func:"mix",unit:"deg",range:"q1"},
-    advanced:{func:"mix",unit:"deg",range:"half"},
-    expert:  {func:"mix",unit:"rad",range:"gen"}
+    basic:   {dir:"fwd",func:"mix",unit:"deg",range:"q1"},
+    advanced:{dir:"fwd",func:"mix",unit:"deg",range:"half"},
+    expert:  {dir:"fwd",func:"mix",unit:"rad",range:"gen"},
+    rev1:    {dir:"rev",func:"mix",unit:"deg",range:"half"},
+    rev2:    {dir:"rev",func:"mix",unit:"rad",range:"wide"}
   };
   function syncSeg(id,key){
     $(id).querySelectorAll("button").forEach(b=>b.classList.toggle("sel",b.dataset.v===settings[key]));
@@ -876,7 +928,7 @@
   function syncChips(){
     document.querySelectorAll(".chip").forEach(c=>{
       const p=PRESETS[c.dataset.preset];
-      const match = settings.mode==="attack"
+      const match = settings.mode==="attack" && settings.dir===(p.dir||"fwd")
         && settings.func===p.func && settings.unit===p.unit && settings.range===p.range;
       c.classList.toggle("sel",match);
     });
@@ -884,8 +936,10 @@
   document.querySelectorAll(".chip").forEach(chip=>{
     chip.addEventListener("click",()=>{
       const p=PRESETS[chip.dataset.preset];
+      settings.dir=p.dir||"fwd";
       settings.func=p.func; settings.unit=p.unit; settings.range=p.range;
       settings.mode="attack";
+      syncSeg("seg-dir","dir");
       syncSeg("seg-func","func"); syncSeg("seg-unit","unit");
       syncSeg("seg-range","range"); syncSeg("seg-mode","mode");
       syncChips();
@@ -896,8 +950,32 @@
   function refreshStartUI(){
     const m=settings.mode;
     const prac = m==="practice", dly = m==="daily";
-    $("pcircle-wrap").style.display = prac ? "" : "none";
-    $("chips-wrap").style.display = m==="attack" ? "" : "none";
+    const rev = settings.dir==="rev";
+    // enforce valid combos in reverse mode
+    if(rev){
+      if(settings.unit==="mix"){ settings.unit="deg"; syncSeg("seg-unit","unit"); }
+      if(settings.unit==="deg" && settings.range!=="half" && settings.range!=="full"){ settings.range="half"; syncSeg("seg-range","range"); }
+      if(settings.unit==="rad" && settings.range!=="wide"){ settings.range="wide"; syncSeg("seg-range","range"); }
+    }else if(settings.range==="wide"){
+      settings.range="half"; syncSeg("seg-range","range");
+    }
+    // range button visibility per direction/unit
+    document.querySelectorAll("#seg-range button").forEach(b=>{
+      const v=b.dataset.v;
+      b.style.display = rev
+        ? (settings.unit==="rad" ? (v==="wide"?"":"none") : ((v==="half"||v==="full")?"":"none"))
+        : (v==="wide"?"none":"");
+    });
+    const unitMixBtn=document.querySelector('#seg-unit [data-v="mix"]');
+    if(unitMixBtn) unitMixBtn.style.display = rev ? "none" : "";
+    // explainer under the toggle
+    $("dir-explain").innerHTML = rev
+      ? '<b>逆引き</b>：値から角度を当てる。<br><span class="q">sin θ = <span class="ex">√3/2</span></span> のとき <span class="q">θ = ?</span> → 当てはまる角を<b>すべて</b>選ぶ（例：<span class="q">60°</span> と <span class="q">120°</span>）'
+      : '<b>順引き</b>：角度から値を当てる。<br><span class="q">sin <span class="ex">60°</span> = ?</span> → <span class="q">√3/2</span> を選ぶ（いつもの形）';
+    $("dir-explain").style.display = dly ? "none" : "";
+    $("pcircle-wrap").style.display = (prac && !rev) ? "" : "none";
+    $("chips-wrap").style.display = (m==="attack" && !rev) ? "" : "none";
+    $("chips-rev-wrap").style.display = (m==="attack" && rev) ? "" : "none";
     $("best-view").style.display = m==="attack" ? "" : "none";
     document.querySelector(".scard").style.display = dly ? "none" : "";
     $("daily-panel").style.display = dly ? "" : "none";
@@ -910,15 +988,19 @@
     $("rule-text").innerHTML = dly
       ? "全員が<b>同じ問題</b>に<b>1日1回</b>だけ挑戦。ルールはタイムアタックと同じ。<br>ミスした問題は、挑戦のあとに復習できます。"
       : prac
-      ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。"
-      : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！";
+      ? (rev
+        ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br>値に当てはまる角を<b>すべて</b>選ぶ練習。ミスすると<b>図解つき</b>で確認できます。"
+        : "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。")
+      : (rev
+        ? "値に合う角を<b>すべて</b>選べたら正解 <b class=\"pl\">+100点</b>、4秒以内なら <b class=\"pl\">+50点</b>。<br>コンボもあり。ミスは <b class=\"mn\">−100点</b>（時間はそのまま）！"
+        : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！");
     syncChips();
   }
   refreshStartUI();
   updateBestView();
   try{ if(!localStorage.getItem("tta-seen-daily")) $("new-daily").style.display=""; }catch(e){}
   try{ if(!localStorage.getItem("tta-seen-snd")) $("new-snd").style.display=""; }catch(e){}
-  const NEWS_VER="v1.3.0";   // bump when mp-news text changes
+  const NEWS_VER="v1.4.0";   // bump when mp-news text changes
   try{ if(localStorage.getItem("tta-news-seen")!==NEWS_VER) $("new-mp").style.display=""; }catch(e){}
 
   // ---- MathML renderers (native browser typesetting) ----
@@ -953,7 +1035,7 @@
     let core;
     if(d===1)      core = n===1 ? "<mi>π</mi>" : "<mn>"+n+"</mn><mi>π</mi>";
     else if(n===1) core = frac("π",d);
-    else           core = frac(n+"π",d);
+    else           core = frac(n,d)+"<mi>π</mi>";   // textbook style: fraction first, then π (e.g. 2/3 π)
     return '<math>'+(neg?'<mo>−</mo>':'')+core+'</math>';
   }
   function fmtQuestion(f,deg,unit){
@@ -976,8 +1058,106 @@
   }
 
   // ---------- question ----------
+  // ---------- reverse mode (value -> angles) ----------
+  function fmtRevQuestion(f,v){
+    // f θ = value  in one MathML row
+    let core;
+    if(v==="none"){ core='<mtext>定義なし</mtext>'; }
+    else{
+      const neg=v.startsWith("-");
+      const s=neg?v.slice(1):v;
+      if(s.includes("/")){ const p=s.split("/"); core=(neg?'<mo>−</mo>':'')+frac(p[0],p[1]); }
+      else{ core=(neg?'<mo>−</mo>':'')+mtok(s); }
+    }
+    return '<math><mi mathvariant="normal" class="mfn">'+f+'</mi><mspace width="0.15em"></mspace><mi>θ</mi><mo>=</mo>'+core+'</math>';
+  }
+  function valNum(v){
+    // "√3/2" -> 0.866..., "-1/√3" -> -0.577...
+    if(v==="none") return NaN;
+    const neg=v.startsWith("-"); const s=neg?v.slice(1):v;
+    function tok(t){ return t[0]==="√" ? Math.sqrt(parseFloat(t.slice(1))) : parseFloat(t); }
+    let x;
+    if(s.includes("/")){ const p=s.split("/"); x=tok(p[0])/tok(p[1]); }
+    else x=tok(s);
+    return neg?-x:x;
+  }
+  function shuffleArr(a){
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+  function revDomain(){
+    if(settings.range==="wide"){
+      const d=[];
+      ANGLES_FULL.forEach(a=>{ d.push(a-360,a,a+360); });
+      d.push(720);   // 4π itself (0 + two turns)
+      return d;
+    }
+    return (settings.range==="half"?ANGLES_HALF:ANGLES_FULL).slice();
+  }
+  let revSel=[], revNone=false;
+  function setRevUI(on){
+    $("rev-actions").style.display = on ? "" : "none";
+  }
+  function updateRevConfirm(){
+    const n=revSel.length;
+    const nb=$("btn-none");
+    nb.classList.toggle("dim", n>0);
+    if(n>0){ revNone=false; nb.classList.remove("sel"); }
+    nb.classList.toggle("sel", revNone);
+    $("btn-confirm").textContent = revNone ? "解答する（この中にはない）" : "解答する（"+n+"個選択中）";
+    $("btn-confirm").disabled = (n===0 && !revNone);
+  }
+  function buildRevBoard(board,unit,noneAllowed){
+    const pal=$("palette");
+    pal.innerHTML="";
+    revSel=[]; revNone=false;
+    board.forEach(degv=>{
+      const b=document.createElement("button");
+      b.innerHTML=fmtAngle(degv,unit);
+      b.addEventListener("click",()=>{
+        if(!running||paused) return;
+        const i=revSel.indexOf(degv);
+        if(i>=0){ revSel.splice(i,1); b.classList.remove("sel"); }
+        else{ revSel.push(degv); b.classList.add("sel"); }
+        updateRevConfirm();
+      });
+      pal.appendChild(b);
+    });
+    $("btn-none").style.display = noneAllowed ? "" : "none";
+    updateRevConfirm();
+  }
+  function revCircle(f,num,solsDeg){
+    const W=220,c=W/2,r=82;
+    let s='<svg width="'+W+'" height="'+W+'" viewBox="0 0 '+W+' '+W+'">';
+    s+='<line x1="'+(c-r-16)+'" y1="'+c+'" x2="'+(c+r+16)+'" y2="'+c+'" stroke="#3A3F6E" stroke-width="1"/>';
+    s+='<line x1="'+c+'" y1="'+(c-r-16)+'" x2="'+c+'" y2="'+(c+r+16)+'" stroke="#3A3F6E" stroke-width="1"/>';
+    s+='<circle cx="'+c+'" cy="'+c+'" r="'+r+'" fill="none" stroke="#8B90B8" stroke-width="1.5"/>';
+    if(isFinite(num)){
+      if(f==="sin"){
+        const y=c-r*num;
+        s+='<line x1="'+(c-r-14)+'" y1="'+y+'" x2="'+(c+r+14)+'" y2="'+y+'" stroke="#FF6B7A" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      }else if(f==="cos"){
+        const x=c+r*num;
+        s+='<line x1="'+x+'" y1="'+(c-r-14)+'" x2="'+x+'" y2="'+(c+r+14)+'" stroke="#FF6B7A" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      }else{
+        const L=r+14, dx=L/Math.sqrt(1+num*num), dy=num*dx;
+        s+='<line x1="'+(c-dx)+'" y1="'+(c+dy)+'" x2="'+(c+dx)+'" y2="'+(c-dy)+'" stroke="#FF6B7A" stroke-width="1.5" stroke-dasharray="5 4"/>';
+      }
+    }
+    const seen={};
+    solsDeg.forEach(dv=>{
+      const nd=((dv%360)+360)%360;
+      if(seen[nd]) return; seen[nd]=1;
+      const th=nd*Math.PI/180, x=c+r*Math.cos(th), y=c-r*Math.sin(th);
+      s+='<line x1="'+c+'" y1="'+c+'" x2="'+x+'" y2="'+y+'" stroke="var(--gold)" stroke-width="2.5"/>';
+      s+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="var(--gold)"/>';
+    });
+    s+='</svg>';
+    return s;
+  }
   function nextQuestion(){
     if(review){
+      setRevUI(false);
       const q=review.queue[0];
       cur={f:q.f,deg:q.deg,unit:q.unit,ans:TABLE[q.f][((q.deg%360)+360)%360]};
       $("question").innerHTML=fmtQuestion(q.f,q.deg,q.unit);
@@ -987,6 +1167,7 @@
       return;
     }
     if(daily){
+      setRevUI(false);
       const rng=daily.rng, ch=daily.ch;
       const dfuncs=["sin","cos","tan"];
       const dangles = ch==="d1" ? ANGLES_HALF : ANGLES_FULL;
@@ -1005,6 +1186,41 @@
       qStart=performance.now();
       return;
     }
+    if(settings.dir==="rev"){
+      setRevUI(true);
+      $("pcircle").innerHTML="";
+      const funcs = settings.func==="mix" ? ["sin","cos","tan"] : [settings.func];
+      const domain=revDomain();
+      let f,v,key,guard=0;
+      do{
+        f=funcs[Math.floor(Math.random()*funcs.length)];
+        const a0=domain[Math.floor(Math.random()*domain.length)];
+        v=TABLE[f][((a0%360)+360)%360];
+        key=f+"="+v; guard++;
+      }while((v==="none" || key===prevKey) && guard<40);
+      if(v==="none"){ f="sin"; v="1/2"; key="sin=1/2"; }
+      prevKey=key;
+      const sols=domain.filter(x=>TABLE[f][((x%360)+360)%360]===v);
+      let board, correct, noneAllowed;
+      if(settings.range==="half"){
+        board=ANGLES_HALF.slice();
+        correct=sols.slice();
+        noneAllowed=false;
+      }else{
+        noneAllowed=true;
+        const inc=sols.filter(()=>Math.random()<0.55);
+        const pool=shuffleArr(domain.filter(x=>!sols.includes(x)));
+        board=shuffleArr(inc.concat(pool.slice(0,8-inc.length)));
+        correct=inc.slice();
+      }
+      correct.sort((a,b)=>a-b);
+      cur={rev:true,f,v,unit:settings.unit,board,correct,noneAllowed};
+      $("question").innerHTML=fmtRevQuestion(f,v);
+      buildRevBoard(board,settings.unit,noneAllowed);
+      qStart=performance.now();
+      return;
+    }
+    setRevUI(false);
     const funcs = settings.func==="mix" ? ["sin","cos","tan"] : [settings.func];
     const angles = settings.range==="q1" ? ANGLES_Q1
                  : settings.range==="half" ? ANGLES_HALF
@@ -1168,10 +1384,33 @@
 
   function showFeedback(){
     setPaused(true);
+    if(cur.rev){
+      $("fb-q").innerHTML=fmtRevQuestion(cur.f,cur.v);
+      $("fb-a").innerHTML = cur.correct.length
+        ? cur.correct.map(x=>fmtAngle(x,cur.unit)).join('<span style="margin:0 .15em">・</span>')
+        : "この中には なし";
+      $("fb-circle").innerHTML=revCircle(cur.f,valNum(cur.v),cur.correct);
+      const prac0 = settings.mode==="practice";
+      $("fb-pen").textContent="−100点";
+      $("overlay").querySelector(".fb-pen").style.display = prac0 ? "none" : "";
+      $("fb-note").textContent =
+        cur.f==="sin" ? "sin＝高さ。同じ高さになる角は円の左右に対称に現れる"
+        : cur.f==="cos" ? "cos＝横の位置。同じ横位置の角は円の上下に対称に現れる"
+        : "tan＝傾き。同じ傾きの角は 180°（π）ごとに現れる";
+      $("overlay").classList.add("show");
+      setTimeout(()=>{
+        $("overlay").classList.remove("show");
+        if(!running){ setPaused(false); return; }
+        setPaused(false);
+        nextQuestion();
+      },FB_MS+700);   // more to read than a fwd miss
+      return;
+    }
     $("fb-q").innerHTML=fmtQuestion(cur.f,cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
     const prac = settings.mode==="practice" || !!review;
+    $("fb-pen").textContent="−100点 ／ 残り時間 −3秒";
     $("overlay").querySelector(".fb-pen").style.display = prac ? "none" : "";
     const note=$("fb-note");
     if(cur.f==="tan"){
@@ -1278,6 +1517,8 @@
     $("question").innerHTML="";
     $("question").classList.remove("qflash-ok");   // stale flash would replay on re-show
     $("question").style.visibility="visible";
+    $("palette").innerHTML="";   // previous game's board must not linger through the countdown
+    setRevUI(false);             // ...nor the reverse-mode action buttons
     $("pop").textContent="";
     $("pop").classList.remove("show");   // stale popup would replay its animation on re-show
     show("scr-game");
@@ -1401,7 +1642,12 @@
         seen.add(k);
         const d=document.createElement("div");
         d.className="miss-item";
-        d.innerHTML='<span>'+fmtQuestion(m.f,m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
+        if(m.rev){
+          d.innerHTML='<span>'+fmtRevQuestion(m.f,m.v)+'</span><span class="ans" style="font-size:15px">'
+            +(m.correct.length ? m.correct.map(x=>fmtAngle(x,m.unit)).join("・") : "なし")+'</span>';
+        }else{
+          d.innerHTML='<span>'+fmtQuestion(m.f,m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
+        }
         list.appendChild(d);
       });
     }
@@ -1578,6 +1824,64 @@
     $("mp-overlay").classList.remove("show");
     openRanking("plays");
   });
+  $("btn-none").addEventListener("click",()=>{
+    if(!running||paused) return;
+    if(!cur||!cur.rev) return;
+    if(revSel.length>0) return;   // exclusive with picks
+    revNone=!revNone;
+    updateRevConfirm();
+  });
+  $("btn-confirm").addEventListener("click",()=>{
+    if(!running||paused) return;
+    if(!cur||!cur.rev) return;
+    const nowT=performance.now();
+    if(nowT-lastAns<150) return;
+    lastAns=nowT;
+    if(revSel.length===0 && !revNone) return;
+    const picked=revNone?[]:revSel.slice().sort((a,b)=>a-b);
+    const ok = picked.length===cur.correct.length && picked.every((x,i)=>x===cur.correct[i]);
+    if(settings.mode==="practice"){
+      if(ok){
+        playOK();
+        correctCount++; streak++;
+        updPracCounts();
+        const q=$("question");
+        q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
+        nextQuestion();
+      }else{
+        playNG();
+        missCount++; streak=0;
+        updPracCounts();
+        showFeedback();
+      }
+      return;
+    }
+    if(ok){
+      playOK();
+      const sec=(nowT-qStart)/1000;
+      const fast=sec<=4.0;   // multi-select needs more room than fwd's 2s
+      sumSec+=sec;
+      streak++; maxStreak=Math.max(maxStreak,streak);
+      let pts=100+(fast?50:0);
+      if(streak>=3) pts+=Math.min(10*streak,100);
+      score+=pts; correctCount++;
+      $("score").textContent=score;
+      $("streak").textContent = streak>=2 ? "×"+streak : "";
+      popup("+"+pts+(fast?" ⚡":""));
+      const q=$("question");
+      q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
+      nextQuestion();
+    }else{
+      playNG();
+      missCount++; streak=0;
+      score=Math.max(0,score-100);
+      // no time penalty in reverse: the lost question time is punishment enough
+      $("score").textContent=score;
+      $("streak").textContent="";
+      misses.push({rev:true,f:cur.f,v:cur.v,unit:cur.unit,correct:cur.correct.slice()});
+      showFeedback();
+    }
+  });
   $("btn-snd").addEventListener("click",()=>{
     try{ localStorage.setItem("tta-seen-snd","1"); }catch(e){}
     $("new-snd").style.display="none";
@@ -1643,14 +1947,16 @@
   function fmtModeKey(k){
     if(k==="daily-d1") return "デイリー数Ⅰ";
     if(k==="daily-d2") return "デイリー数Ⅱ";
+    let rev=false;
+    if(k.startsWith("rev-")){ rev=true; k=k.slice(4); }
     const [f,u,r]=k.split("-");
     if(RANKED[k]){
       return {"mix-deg-q1":"BASIC","mix-deg-half":"ADVANCED","mix-rad-gen":"EXPERT"}[k];
     }
     const F={sin:"sin",cos:"cos",tan:"tan",mix:"MIX"}[f];
     const U={deg:"度",rad:"弧",mix:"混"}[u];
-    const R={q1:"30·45·60°",half:"〜180°",full:"〜360°",gen:"一般角"}[r];
-    return F+"・"+U+"・"+R;
+    const R={q1:"30·45·60°",half:"〜180°",full:"〜360°",gen:"一般角",wide:"−2π〜4π"}[r];
+    return (rev?"逆引き・":"")+F+"・"+U+"・"+R;
   }
   function fmtDate(t){
     const d=new Date(t);
