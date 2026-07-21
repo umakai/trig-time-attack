@@ -78,6 +78,8 @@
   .srow .sl{width:44px;flex-shrink:0;font-size:12px;color:var(--ink-dim);font-weight:700;}
   .srow .seg{flex:1;}
   .srow .seg button{padding:9px 2px;font-size:13px;}
+  #seg-dir button{padding:6px 2px;line-height:1.25;}
+  #seg-dir button small{display:block;font-size:10px;font-weight:600;opacity:.72;}
   #seg-range button{font-size:11.5px;padding-left:1px;padding-right:1px;}
   .setting{margin-bottom:18px;}
   .setting-label{font-size:12px;color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;}
@@ -122,7 +124,7 @@
   .startwrap{
     position:sticky;bottom:0;margin-top:auto;
     display:flex;flex-direction:column;
-    padding:14px 0 10px;
+    padding:10px 0 10px;
     background:linear-gradient(to top, var(--bg) 78%, transparent);
   }
   .start-btn{
@@ -332,13 +334,6 @@
     font-family:inherit;cursor:pointer;margin-top:8px;
   }
   .confirmbtn:disabled{opacity:.35;}
-  .dir-explain{
-    background:var(--bg);border:1px solid var(--panel-hi);border-radius:9px;
-    padding:7px 10px;margin:0 0 8px;font-size:12px;line-height:1.6;color:var(--ink-dim);
-  }
-  .dir-explain b{color:var(--ink);}
-  .dir-explain .ex{color:var(--gold);font-weight:700;}
-  .dir-explain .q{font-family:ui-monospace,Menlo,monospace;}
   .palette button.small{font-size:15px;font-family:inherit;}
 
   /* ---------- feedback overlay ---------- */
@@ -354,7 +349,7 @@
   }
   #overlay .fb{ padding:30px 26px; }
   .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:.1em;}
-  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:.3em;}
+  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.15em .3em;row-gap:4px;}
   .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
   .fb .fb-pen{
     font-size:13px;font-weight:800;color:var(--ng);
@@ -382,6 +377,7 @@
     font-family:ui-monospace,Menlo,monospace;font-size:17px;font-weight:700;
   }
   .miss-item>span{display:inline-flex;align-items:center;gap:.1em;}
+  .miss-item .ans{flex-wrap:wrap;justify-content:flex-end;max-width:60%;row-gap:2px;}
   .miss-item .ans{color:var(--ok);}
   .nomiss{color:var(--ok);font-weight:700;text-align:center;padding:20px 0;}
   .btnrow{display:flex;gap:8px;margin-top:14px;}
@@ -422,11 +418,10 @@
       <div class="srow">
         <div class="sl">出題の向き</div>
         <div class="seg" id="seg-dir">
-          <button data-v="fwd" class="sel">→ 順引き</button>
-          <button data-v="rev">← 逆引き</button>
+          <button data-v="fwd" class="sel">→ 順引き<small>角度 → 値</small></button>
+          <button data-v="rev">← 逆引き<small>値 → 角度</small></button>
         </div>
       </div>
-      <div class="dir-explain" id="dir-explain"></div>
       <div class="srow">
         <div class="sl">関数</div>
         <div class="seg" id="seg-func">
@@ -968,11 +963,6 @@
     });
     const unitMixBtn=document.querySelector('#seg-unit [data-v="mix"]');
     if(unitMixBtn) unitMixBtn.style.display = rev ? "none" : "";
-    // explainer under the toggle
-    $("dir-explain").innerHTML = rev
-      ? '<b>逆引き</b>：値から角度を当てる。<br><span class="q">sin θ = <span class="ex">√3/2</span></span> のとき <span class="q">θ = ?</span> → 当てはまる角を<b>すべて</b>選ぶ（例：<span class="q">60°</span> と <span class="q">120°</span>）'
-      : '<b>順引き</b>：角度から値を当てる。<br><span class="q">sin <span class="ex">60°</span> = ?</span> → <span class="q">√3/2</span> を選ぶ（いつもの形）';
-    $("dir-explain").style.display = dly ? "none" : "";
     $("pcircle-wrap").style.display = (prac && !rev) ? "" : "none";
     $("chips-wrap").style.display = (m==="attack" && !rev) ? "" : "none";
     $("chips-rev-wrap").style.display = (m==="attack" && rev) ? "" : "none";
