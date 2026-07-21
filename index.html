@@ -91,7 +91,7 @@
   }
   .seg button.sel{background:var(--gold);color:#1A1400;}
   .chips{display:flex;gap:6px;}
-  #chips-wrap{
+  #chips-wrap,#chips-rev-wrap{
     background:linear-gradient(160deg, rgba(255,201,77,.10), rgba(255,201,77,.03));
     border:1px solid rgba(255,201,77,.55);
     border-radius:14px;
@@ -99,17 +99,17 @@
     margin-top:14px;
     margin-bottom:18px;
   }
-  #chips-wrap .rank-head{
+  #chips-wrap .rank-head,#chips-rev-wrap .rank-head{
     display:flex;align-items:baseline;gap:8px;margin-bottom:10px;
   }
-  #chips-wrap .rank-name{
+  #chips-wrap .rank-name,#chips-rev-wrap .rank-name{
     font-size:16px;font-weight:800;color:var(--gold);letter-spacing:.08em;
   }
-  #chips-wrap .rank-desc{
+  #chips-wrap .rank-desc,#chips-rev-wrap .rank-desc{
     font-size:11px;color:var(--ink-dim);
   }
-  #chips-wrap .chip{background:var(--panel);}
-  #chips-wrap .chip.sel{background:var(--gold);}
+  #chips-wrap .chip,#chips-rev-wrap .chip{background:var(--panel);}
+  #chips-wrap .chip.sel,#chips-rev-wrap .chip.sel{background:var(--gold);}
   .chip{
     flex:1;padding:10px 4px;border:none;border-radius:12px;
     background:var(--panel);cursor:pointer;font-family:inherit;
@@ -120,6 +120,7 @@
   .chip.sel{background:var(--gold);}
   .chip.sel b{color:#1A1400;}
   .chip.sel span{color:#5A4A00;}
+
   #pcircle{display:none;justify-content:center;margin-top:4px;}
   .startwrap{
     position:sticky;bottom:0;margin-top:auto;
@@ -148,7 +149,7 @@
     font-family:inherit;cursor:pointer;
   }
   .rankbtn:active{background:var(--panel-hi);}
-  #btn-rank{width:100%;margin-top:10px;}
+  #btn-rank,#btn-rank-rev{width:100%;margin-top:10px;}
   #btn-rank-submit{margin-top:12px;}
   .rank-list{max-height:55vh;overflow-y:auto;margin-top:4px;}
   .rank-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:14px;}
@@ -349,7 +350,7 @@
   }
   #overlay .fb{ padding:30px 26px; }
   .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:.1em;}
-  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:.15em .3em;row-gap:4px;}
+  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:block;text-align:center;line-height:1.9;}
   .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
   .fb .fb-pen{
     font-size:13px;font-weight:800;color:var(--ng);
@@ -474,12 +475,13 @@
     <div class="setting" id="chips-rev-wrap" style="display:none">
       <div class="rank-head">
         <span class="rank-name">🔄 逆引きチャレンジ</span>
-        <span class="rank-desc">値→角度</span>
+        <span class="rank-desc">値→角度・ランキング対象</span>
       </div>
       <div class="chips">
         <button class="chip" data-preset="rev1"><b>逆引き・数Ⅰ</b><span>度数法・0°〜180°</span></button>
         <button class="chip" data-preset="rev2"><b>逆引き・数Ⅱ</b><span>弧度法・−2π〜4π</span></button>
       </div>
+      <button class="rankbtn" id="btn-rank-rev">🏆 ランキングを見る</button>
     </div>
 
     <div id="daily-panel" style="display:none">
@@ -495,7 +497,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.4.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.4.1 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -599,7 +601,7 @@
     </div>
     <div class="mp-news" id="mp-news">
       <button class="nx" id="mp-news-x">×</button>
-      📢 <b>NEW</b>　🔄 <b>逆引きモード</b>が登場！値から角度を「すべて」探す新しい挑戦。ホームの「出題の向き」→「← 逆引き」から。タイムアタックでも練習でも遊べます。
+      📢 <b>NEW</b>　🔄 <b>逆引きモード</b>が登場！値から角度を「すべて」探す新しい挑戦。ホームの「出題の向き」→「← 逆引き」から。<b>ランキングも2部門</b>あります（数Ⅰ・数Ⅱ）。
     </div>
     <div class="mp-badge">
       <span class="mp-emoji" id="mp-emoji">🔰</span>
@@ -659,7 +661,8 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
-    <p><b>v1.4.0</b> 🔄 <b>逆引きモード</b>を追加！「sin θ = √3/2 になる角は？」——値から角度を全部探す新しい遊び方。出題設定の「出題の向き」から切り替え、タイムアタックでも練習でも遊べます（記録は端末内のみ）。</p>
+    <p><b>v1.4.1</b> 🏆 逆引きに<b>オンラインランキング</b>が登場！数Ⅰ・数Ⅱの2部門。逆引きチャレンジの「ランキングを見る」から。ベスト更新時に登録できます（参加は任意・順引きとは別集計）。</p>
+    <p><b>v1.4.0</b> 🔄 <b>逆引きモード</b>を追加！「sin θ = √3/2 になる角は？」——値から角度を全部探す新しい遊び方。出題設定の「出題の向き」から切り替え、タイムアタックでも練習でも遊べます。逆引きのミスは<b>時間ペナルティなし</b>（−100点のみ・速答基準は4秒）。弧度法は<b>0〜2π</b>と<b>−2π〜4π</b>の2種類から選べます（記録は端末内のみ）。</p>
     <p><b>v1.3.2</b> 分数・根号・πの表示を数式組版に対応し、より読みやすくなりました。</p>
     <p><b>v1.3.1</b> 持ち時間を70秒に統一しました（端末によってわずかに時間が延びる現象を修正し、全員同じ条件に）。タイマーの精度も向上。</p>
     <p><b>v1.3.0</b> 🔊 効果音を追加！マイページの「⚙️ 設定」からON（音色は2種類から選択・試聴つき）。ゲーム画面の🔊ボタンでいつでもワンタッチ消音できます。画面上部の配置も整理しました。</p>
@@ -697,7 +700,9 @@
   const RANKED={
     "mix-deg-q1":"関数ミックス・度数法・30°·45°·60°",
     "mix-deg-half":"関数ミックス・度数法・0°〜180°",
-    "mix-rad-gen":"関数ミックス・弧度法・一般角"
+    "mix-rad-gen":"関数ミックス・弧度法・一般角",
+    "rev-mix-deg-half":"逆引き・数Ⅰ（度数法 0°〜180°）",
+    "rev-mix-rad-wide":"逆引き・数Ⅱ（弧度法 −2π〜4π）"
   };
 
   // ---------- state ----------
@@ -950,7 +955,7 @@
     if(rev){
       if(settings.unit==="mix"){ settings.unit="deg"; syncSeg("seg-unit","unit"); }
       if(settings.unit==="deg" && settings.range!=="half" && settings.range!=="full"){ settings.range="half"; syncSeg("seg-range","range"); }
-      if(settings.unit==="rad" && settings.range!=="wide"){ settings.range="wide"; syncSeg("seg-range","range"); }
+      if(settings.unit==="rad" && settings.range!=="wide" && settings.range!=="full"){ settings.range="wide"; syncSeg("seg-range","range"); }
     }else if(settings.range==="wide"){
       settings.range="half"; syncSeg("seg-range","range");
     }
@@ -958,11 +963,14 @@
     document.querySelectorAll("#seg-range button").forEach(b=>{
       const v=b.dataset.v;
       b.style.display = rev
-        ? (settings.unit==="rad" ? (v==="wide"?"":"none") : ((v==="half"||v==="full")?"":"none"))
+        ? (settings.unit==="rad" ? ((v==="wide"||v==="full")?"":"none") : ((v==="half"||v==="full")?"":"none"))
         : (v==="wide"?"none":"");
     });
     const unitMixBtn=document.querySelector('#seg-unit [data-v="mix"]');
     if(unitMixBtn) unitMixBtn.style.display = rev ? "none" : "";
+    const fullBtn=document.querySelector('#seg-range [data-v="full"]');
+    if(fullBtn) fullBtn.textContent = (rev && settings.unit==="rad") ? "0〜2π" : "0°〜360°";
+
     $("pcircle-wrap").style.display = (prac && !rev) ? "" : "none";
     $("chips-wrap").style.display = (m==="attack" && !rev) ? "" : "none";
     $("chips-rev-wrap").style.display = (m==="attack" && rev) ? "" : "none";
@@ -1750,6 +1758,7 @@
   }
   const RANK_SETS={
     main:[["mix-deg-q1","BASIC"],["mix-deg-half","ADVANCED"],["mix-rad-gen","EXPERT"]],
+    rev:[["rev-mix-deg-half","逆引き数Ⅰ"],["rev-mix-rad-wide","逆引き数Ⅱ"]],
     daily:[["daily-d1","今日の数Ⅰ"],["daily-d2","今日の数Ⅱ"]],
     plays:[["plays","回数"]]
   };
@@ -1761,7 +1770,12 @@
     }
     return RANKED[k];
   }
-  function rankSetOf(k){ return k==="plays" ? "plays" : k.indexOf("daily-")===0 ? "daily" : "main"; }
+  function rankSetOf(k){ return k==="plays" ? "plays" : k.indexOf("daily-")===0 ? "daily" : k.indexOf("rev-")===0 ? "rev" : "main"; }
+  function shortModeKey(k){
+    for(const set of Object.values(RANK_SETS))
+      for(const [kk,n] of set) if(kk===k) return n;
+    return fmtModeKey(k);   // custom (non-ranked) configs keep the detailed label
+  }
   function renderRankTabs(){
     const set=RANK_SETS[rankSetOf(rankKey)];
     const tabs=$("rank-tabs");
@@ -1945,7 +1959,8 @@
     }
     const F={sin:"sin",cos:"cos",tan:"tan",mix:"MIX"}[f];
     const U={deg:"度",rad:"弧",mix:"混"}[u];
-    const R={q1:"30·45·60°",half:"〜180°",full:"〜360°",gen:"一般角",wide:"−2π〜4π"}[r];
+    let R={q1:"30·45·60°",half:"〜180°",full:"〜360°",gen:"一般角",wide:"−2π〜4π"}[r];
+    if(rev && u==="rad" && r==="full") R="0〜2π";
     return (rev?"逆引き・":"")+F+"・"+U+"・"+R;
   }
   function fmtDate(t){
@@ -2004,7 +2019,7 @@
     tabs.innerHTML="";
     modes.forEach(m=>{
       const b=document.createElement("button");
-      b.textContent=fmtModeKey(m);
+      b.textContent=shortModeKey(m);
       b.style.fontSize="11px";
       if(m===chartMode) b.classList.add("sel");
       b.addEventListener("click",()=>{ chartMode=m; renderSpeedChart(); });
@@ -2066,16 +2081,17 @@
     const bests=loadBests();
     const modeRows=Object.keys(RANKED).map(k=>({
       rank:"",
-      label:fmtModeKey(k),
+      label:shortModeKey(k),
       score:(bests[k]!==undefined ? bests[k] : "—")
     }));
     renderRows($("mp-top"),modeRows);
     const recent=st.hist.slice(0,5)
-      .map(h=>({rank:"",label:fmtModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
+      .map(h=>({rank:"",label:shortModeKey(h.k)+"　"+fmtDate(h.t),score:h.s}));
     renderRows($("mp-recent"),recent);
     renderSpeedChart();
     $("mp-overlay").classList.add("show");
   }
+  $("btn-rank-rev").addEventListener("click",()=>openRanking("rev-mix-deg-half"));
   $("btn-mypage").addEventListener("click",openMyPage);
   $("mp-news-x").addEventListener("click",()=>{
     try{ localStorage.setItem("tta-news-closed",NEWS_VER); }catch(e){}
