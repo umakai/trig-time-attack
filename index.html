@@ -292,20 +292,17 @@
   @keyframes popup{0%{opacity:0;transform:translateY(10px);}25%{opacity:1;}100%{opacity:0;transform:translateY(-12px);}}
   .question{font-size:64px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
   .question .fn{color:var(--gold);margin-right:.12em;}
+  .mfn{ color:var(--gold); }
+  math .mfn{ color:var(--gold); }
 
-  /* vertical fractions */
-  .frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1.1;font-size:.62em;}
-  .frac .fden{border-top:.09em solid currentColor;margin-top:.1em;padding-top:.1em;}
+  /* MathML typesetting */
+  math{ font-size:1em; }
+  .question math{ font-size:1.05em; }
+  .palette button math{ font-size:1em; }
+  /* fallback nudge so numerator/denominator breathe on engines that pack them tight */
+  mfrac{ padding:0 .05em; }
   .minus{margin-right:.08em;}
 
-  /* square root with vinculum */
-  .sqrt{white-space:nowrap;}
-  .sqrt .rad{
-    display:inline-block;
-    border-top:.085em solid currentColor;
-    margin-left:-.16em;
-    padding:.06em .05em 0 .12em;
-  }
   .qflash-ok{animation:okflash .3s;}
   @keyframes okflash{0%{color:var(--ok);}100%{color:var(--ink);}}
 
@@ -331,16 +328,17 @@
     text-align:center;max-width:320px;width:88%;
     border:1px solid var(--ng);
   }
-  .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:.1em;}
-  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:.3em;}
+  #overlay .fb{ padding:30px 26px; }
+  .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:.1em;}
+  .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:.3em;}
   .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
   .fb .fb-pen{
     font-size:13px;font-weight:800;color:var(--ng);
     background:rgba(255,107,122,.12);border-radius:8px;
-    padding:6px 10px;margin-bottom:12px;letter-spacing:.05em;
+    padding:7px 12px;margin-bottom:20px;letter-spacing:.05em;
   }
   .fb svg{display:block;margin:0 auto;}
-  .fb .fb-note{font-size:13px;color:var(--ink-dim);margin-top:8px;line-height:1.5;}
+  .fb .fb-note{font-size:13px;color:var(--ink-dim);margin-top:16px;line-height:1.6;}
 
   /* ---------- result screen ---------- */
   .result-head{text-align:center;margin:30px 0 20px;}
@@ -418,8 +416,8 @@
         <div class="sl">範囲</div>
         <div class="seg" id="seg-range">
           <button data-v="q1">30·45·60°</button>
-          <button data-v="half">0°〜180°</button>
-          <button data-v="full" class="sel">0°〜360°</button>
+          <button data-v="half" class="sel">0°〜180°</button>
+          <button data-v="full">0°〜360°</button>
           <button data-v="gen">一般角</button>
         </div>
       </div>
@@ -458,7 +456,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.3.1 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.3.2 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -618,6 +616,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.3.2</b> 分数・根号・πの表示を数式組版に対応し、より読みやすくなりました。</p>
     <p><b>v1.3.1</b> 持ち時間を70秒に統一しました（端末によってわずかに時間が延びる現象を修正し、全員同じ条件に）。タイマーの精度も向上。</p>
     <p><b>v1.3.0</b> 🔊 効果音を追加！マイページの「⚙️ 設定」からON（音色は2種類から選択・試聴つき）。ゲーム画面の🔊ボタンでいつでもワンタッチ消音できます。画面上部の配置も整理しました。</p>
     <p><b>v1.2.0</b> 🗓️ デイリーチャレンジ登場！数Ⅰ・数Ⅱの日替わり問題に1日1回だけ挑戦（朝4:00更新）。ミスした問題の復習、連続日数🔥、全員が同じ問題で競う「今日のランキング」も。マイページには「回数ランキング」を追加しました（正解5問以上のプレイ数・ランキング参加者が対象）。</p>
@@ -658,7 +657,7 @@
   };
 
   // ---------- state ----------
-  const settings={func:"mix",unit:"deg",range:"full",mode:"attack",pcircle:"on"};
+  const settings={func:"mix",unit:"deg",range:"half",mode:"attack",pcircle:"on"};
   let daily=null;    // active daily run: {ch:"d1"|"d2", rng}
   let review=null;   // active review run: {ch, queue:[{f,deg,unit},...]}
   let time=DUR, running=false, paused=false, tick=null;
@@ -922,37 +921,58 @@
   const NEWS_VER="v1.3.0";   // bump when mp-news text changes
   try{ if(localStorage.getItem("tta-news-seen")!==NEWS_VER) $("new-mp").style.display=""; }catch(e){}
 
-  function sq(s){
-    return String(s).replace(/√(\d+)/g,'<span class="sqrt">√<span class="rad">$1</span></span>');
+  // ---- MathML renderers (native browser typesetting) ----
+  // a token string like "√3", "2π", "1", "π" -> MathML inner markup
+  function mtok(s){
+    s=String(s);
+    let out="", i=0;
+    while(i<s.length){
+      const ch=s[i];
+      if(ch==="√"){
+        let num=""; i++;
+        while(i<s.length && /[0-9]/.test(s[i])){ num+=s[i]; i++; }
+        out+="<msqrt><mn>"+num+"</mn></msqrt>";
+      }else if(ch==="π"){
+        out+="<mi>π</mi>"; i++;
+      }else if(/[0-9]/.test(ch)){
+        let num=""; while(i<s.length && /[0-9]/.test(s[i])){ num+=s[i]; i++; }
+        out+="<mn>"+num+"</mn>";
+      }else{ i++; }
+    }
+    return out;
   }
-  function frac(n,d){
-    return '<span class="frac"><span class="fnum">'+sq(n)+'</span><span class="fden">'+sq(d)+'</span></span>';
-  }
+  function sq(s){ return '<math>'+mtok(s)+'</math>'; }   // kept for API compatibility
+  function frac(n,d){ return '<mfrac><mrow>'+mtok(n)+'</mrow><mrow>'+mtok(d)+'</mrow></mfrac>'; }
   function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
   function fmtAngle(deg,unit){
-    if(unit!=="rad") return String(deg).replace("-","−")+"°";
-    if(deg===0) return "0";
+    if(unit!=="rad") return '<math><mn>'+String(deg).replace("-","−")+'</mn><mo>°</mo></math>';
+    if(deg===0) return '<math><mn>0</mn></math>';
     const neg=deg<0;
     let n=Math.abs(deg), d=180;
     const g=gcd(n,d); n/=g; d/=g;
     let core;
-    if(d===1)      core = n===1 ? "π" : n+"π";
+    if(d===1)      core = n===1 ? "<mi>π</mi>" : "<mn>"+n+"</mn><mi>π</mi>";
     else if(n===1) core = frac("π",d);
-    else           core = frac(n,d)+"π";
-    return (neg?'<span class="minus">−</span>':'')+core;
+    else           core = frac(n+"π",d);
+    return '<math>'+(neg?'<mo>−</mo>':'')+core+'</math>';
+  }
+  function fmtQuestion(f,deg,unit){
+    // function name and angle in a single MathML row -> unified font & baseline
+    const ang=fmtAngle(deg,unit).replace(/^<math>/,"").replace(/<\/math>$/,"");
+    return '<math><mi mathvariant="normal" class="mfn">'+f+'</mi><mspace width="0.15em"></mspace>'+ang+'</math>';
   }
   function fmtVal(v){
     if(v==="none") return "定義なし";
     const neg=v.startsWith("-");
     const s=neg?v.slice(1):v;
-    let html;
+    let core;
     if(s.includes("/")){
       const p=s.split("/");
-      html=frac(p[0],p[1]);
+      core=frac(p[0],p[1]);
     }else{
-      html=sq(s);
+      core=mtok(s);
     }
-    return (neg?'<span class="minus">−</span>':'')+html;
+    return '<math>'+(neg?'<mo>−</mo>':'')+core+'</math>';
   }
 
   // ---------- question ----------
@@ -960,7 +980,7 @@
     if(review){
       const q=review.queue[0];
       cur={f:q.f,deg:q.deg,unit:q.unit,ans:TABLE[q.f][((q.deg%360)+360)%360]};
-      $("question").innerHTML='<span class="fn">'+q.f+'</span>&thinsp;'+fmtAngle(q.deg,q.unit);
+      $("question").innerHTML=fmtQuestion(q.f,q.deg,q.unit);
       buildPalette(q.f,true);
       $("streak").textContent="残り"+review.queue.length+"問";
       qStart=performance.now();
@@ -980,7 +1000,7 @@
       prevKey=key;
       const norm=((a%360)+360)%360;
       cur={f,deg:a,unit:DAILY_DEF[ch].unit,ans:TABLE[f][norm]};
-      $("question").innerHTML='<span class="fn">'+f+'</span>&thinsp;'+fmtAngle(a,cur.unit);
+      $("question").innerHTML=fmtQuestion(f,a,cur.unit);
       buildPalette(f,true);
       qStart=performance.now();
       return;
@@ -1004,7 +1024,7 @@
     const unit = settings.unit==="mix" ? (Math.random()<0.5?"deg":"rad") : settings.unit;
     const norm=((a%360)+360)%360;          // look up the value by the coterminal angle
     cur={f,deg:a,unit,ans:TABLE[f][norm]};
-    $("question").innerHTML='<span class="fn">'+f+'</span>&thinsp;'+fmtAngle(a,unit);
+    $("question").innerHTML=fmtQuestion(f,a,unit);
     buildPalette(f);
     if(settings.mode==="practice"){
       $("pcircle").innerHTML=plainCircle(a, settings.pcircle==="on");
@@ -1148,7 +1168,7 @@
 
   function showFeedback(){
     setPaused(true);
-    $("fb-q").innerHTML='<span style="color:var(--gold)">'+cur.f+'</span>&thinsp;'+fmtAngle(cur.deg,cur.unit);
+    $("fb-q").innerHTML=fmtQuestion(cur.f,cur.deg,cur.unit);
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
     const prac = settings.mode==="practice" || !!review;
@@ -1381,7 +1401,7 @@
         seen.add(k);
         const d=document.createElement("div");
         d.className="miss-item";
-        d.innerHTML='<span><span style="color:var(--gold)">'+m.f+'</span>&thinsp;'+fmtAngle(m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
+        d.innerHTML='<span>'+fmtQuestion(m.f,m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
         list.appendChild(d);
       });
     }
