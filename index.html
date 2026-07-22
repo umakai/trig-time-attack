@@ -996,7 +996,7 @@
         ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br>値に当てはまる角を<b>すべて</b>選ぶ練習。ミスすると<b>図解つき</b>で確認できます。"
         : "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。")
       : (rev
-        ? "値に合う角を<b>すべて</b>選べたら正解 <b class=\"pl\">+100点</b>、4秒以内なら <b class=\"pl\">+50点</b>。<br>コンボもあり。ミスは <b class=\"mn\">−100点</b>（時間はそのまま）！"
+        ? "値に合う角を<b>すべて</b>選べたら <b class=\"pl\">+150点</b>、さらに<b>解1つにつき +25点</b>。<br>素早ければ <b class=\"pl\">+50点</b>（解が多いほど制限もゆるやか）。3連続からコンボ。ミスは <b class=\"mn\">−100点</b>（時間はそのまま）！"
         : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！");
     syncChips();
   }
@@ -1089,6 +1089,8 @@
     return a;
   }
   const NONE_RATE=0.08;   // how often "⊘ この中にはない" is the right answer (subset boards only)
+  // reverse scoring: one reverse question is worth about 1.5 forward questions, plus the cost of each extra angle
+  const REV_BASE=150, REV_PER_SOL=25, REV_COMBO=20, REV_SPEED_BASE=3, REV_SPEED_PER=2;
   function revDomain(){
     if(settings.range==="wide"){
       const d=[];
@@ -1876,11 +1878,12 @@
     if(ok){
       playOK();
       const sec=(nowT-qStart)/1000;
-      const fast=sec<=4.0;   // multi-select needs more room than fwd's 2s
+      const cnt=Math.max(cur.correct.length,1);       // ⊘ costs about as much as one pick
+      const fast=sec<=REV_SPEED_BASE+REV_SPEED_PER*cnt;   // fixed 4s is unreachable when several angles must be tapped
       sumSec+=sec;
       streak++; maxStreak=Math.max(maxStreak,streak);
-      let pts=100+(fast?50:0);
-      if(streak>=3) pts+=Math.min(10*streak,100);
+      let pts=REV_BASE+REV_PER_SOL*(cnt-1)+(fast?50:0);
+      if(streak>=3) pts+=Math.min(REV_COMBO*streak,100);   // only ~8 questions fit, so the cap must be reachable
       score+=pts; correctCount++;
       $("score").textContent=score;
       $("streak").textContent = streak>=2 ? "×"+streak : "";
