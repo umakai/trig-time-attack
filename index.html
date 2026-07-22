@@ -294,7 +294,6 @@
   .pop.show{animation:popup .8s ease-out;}
   @keyframes popup{0%{opacity:0;transform:translateY(10px);}25%{opacity:1;}100%{opacity:0;transform:translateY(-12px);}}
   .question{font-size:64px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
-  .question .fn{color:var(--gold);margin-right:.12em;}
   .mfn{ color:var(--gold); }
   math .mfn{ color:var(--gold); }
 
@@ -304,7 +303,6 @@
   .palette button math{ font-size:1em; }
   /* fallback nudge so numerator/denominator breathe on engines that pack them tight */
   mfrac{ padding:0 .05em; }
-  .minus{margin-right:.08em;}
 
   .qflash-ok{animation:okflash .3s;}
   @keyframes okflash{0%{color:var(--ok);}100%{color:var(--ink);}}
@@ -1006,7 +1004,7 @@
   updateBestView();
   try{ if(!localStorage.getItem("tta-seen-daily")) $("new-daily").style.display=""; }catch(e){}
   try{ if(!localStorage.getItem("tta-seen-snd")) $("new-snd").style.display=""; }catch(e){}
-  const NEWS_VER="v1.4.0";   // bump when mp-news text changes
+  const NEWS_VER="v1.4.1";   // bump when mp-news text changes
   try{ if(localStorage.getItem("tta-news-seen")!==NEWS_VER) $("new-mp").style.display=""; }catch(e){}
 
   // ---- MathML renderers (native browser typesetting) ----
@@ -1029,7 +1027,6 @@
     }
     return out;
   }
-  function sq(s){ return '<math>'+mtok(s)+'</math>'; }   // kept for API compatibility
   function frac(n,d){ return '<mfrac><mrow>'+mtok(n)+'</mrow><mrow>'+mtok(d)+'</mrow></mfrac>'; }
   function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
   function fmtAngle(deg,unit){
@@ -1091,6 +1088,7 @@
     for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
     return a;
   }
+  const NONE_RATE=0.08;   // how often "⊘ この中にはない" is the right answer (subset boards only)
   function revDomain(){
     if(settings.range==="wide"){
       const d=[];
@@ -1214,8 +1212,14 @@
         noneAllowed=false;
       }else{
         noneAllowed=true;
-        const inc=sols.filter(()=>Math.random()<0.55);
         const pool=shuffleArr(domain.filter(x=>!sols.includes(x)));
+        let inc;
+        if(Math.random()<NONE_RATE){
+          inc=[];                                   // deliberate "⊘ この中にはない" question
+        }else{
+          inc=sols.filter(()=>Math.random()<0.55);
+          if(inc.length===0) inc=[sols[Math.floor(Math.random()*sols.length)]];   // never ⊘ by accident
+        }
         board=shuffleArr(inc.concat(pool.slice(0,8-inc.length)));
         correct=inc.slice();
       }
@@ -1397,9 +1401,8 @@
         ? '<div class="rev-ans">'+cur.correct.map(x=>'<span class="ra">'+fmtAngle(x,cur.unit)+'</span>').join("")+'</div>'
         : '<div class="rev-ans"><span class="ra">⊘ この中にはない</span></div>';
       $("fb-circle").innerHTML=revCircle(cur.f,valNum(cur.v),cur.correct);
-      const prac0 = settings.mode==="practice";
-      $("fb-pen").textContent="−100点";
-      $("overlay").querySelector(".fb-pen").style.display = prac0 ? "none" : "";
+      $("fb-pen").textContent="−100点";   // reverse has no time penalty
+      $("overlay").querySelector(".fb-pen").style.display = settings.mode==="practice" ? "none" : "";
       $("fb-note").textContent =
         cur.f==="sin" ? "sin＝高さ。同じ高さになる角は円の左右に対称に現れる"
         : cur.f==="cos" ? "cos＝横の位置。同じ横位置の角は円の上下に対称に現れる"
@@ -1645,7 +1648,7 @@
     }else{
       const seen=new Set();
       misses.forEach(m=>{
-        const k=m.f+m.deg;
+        const k = m.rev ? ("rev|"+m.f+"|"+m.v) : (m.f+m.deg);   // reverse misses have no .deg: key on the value instead
         if(seen.has(k)) return;
         seen.add(k);
         const d=document.createElement("div");
@@ -1857,7 +1860,7 @@
     if(settings.mode==="practice"){
       if(ok){
         playOK();
-        correctCount++; streak++;
+        correctCount++; streak++; maxStreak=Math.max(maxStreak,streak);
         updPracCounts();
         const q=$("question");
         q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
