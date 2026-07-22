@@ -352,6 +352,14 @@
   .fb .fb-q{font-size:34px;font-weight:800;font-family:ui-monospace,Menlo,monospace;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:.1em;}
   .fb .fb-a{font-size:16px;color:var(--ng);font-weight:700;margin-bottom:18px;display:block;text-align:center;line-height:1.9;}
   .fb .fb-a b{font-size:28px;font-family:ui-monospace,Menlo,monospace;display:inline-flex;align-items:center;}
+  /* reverse answers: values always start on a new line, each in its own chip */
+  .fb .fb-a.rev b{display:block;width:100%;margin-top:9px;}
+  .rev-ans{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:8px;row-gap:10px;}
+  .rev-ans .ra{
+    font-size:21px;color:var(--ok);display:inline-flex;align-items:center;
+    background:rgba(74,222,128,.10);border:1px solid rgba(74,222,128,.45);
+    border-radius:9px;padding:7px 11px;line-height:1.35;
+  }
   .fb .fb-pen{
     font-size:13px;font-weight:800;color:var(--ng);
     background:rgba(255,107,122,.12);border-radius:8px;
@@ -1384,9 +1392,10 @@
     setPaused(true);
     if(cur.rev){
       $("fb-q").innerHTML=fmtRevQuestion(cur.f,cur.v);
+      $("fb-a").parentElement.classList.add("rev");   // values drop to their own line
       $("fb-a").innerHTML = cur.correct.length
-        ? cur.correct.map(x=>fmtAngle(x,cur.unit)).join('<span style="margin:0 .15em">・</span>')
-        : "この中には なし";
+        ? '<div class="rev-ans">'+cur.correct.map(x=>'<span class="ra">'+fmtAngle(x,cur.unit)+'</span>').join("")+'</div>'
+        : '<div class="rev-ans"><span class="ra">⊘ この中にはない</span></div>';
       $("fb-circle").innerHTML=revCircle(cur.f,valNum(cur.v),cur.correct);
       const prac0 = settings.mode==="practice";
       $("fb-pen").textContent="−100点";
@@ -1405,6 +1414,7 @@
       return;
     }
     $("fb-q").innerHTML=fmtQuestion(cur.f,cur.deg,cur.unit);
+    $("fb-a").parentElement.classList.remove("rev");
     $("fb-a").innerHTML=fmtVal(cur.ans);
     $("fb-circle").innerHTML=circleSVG(cur.f,cur.deg);
     const prac = settings.mode==="practice" || !!review;
@@ -1642,7 +1652,7 @@
         d.className="miss-item";
         if(m.rev){
           d.innerHTML='<span>'+fmtRevQuestion(m.f,m.v)+'</span><span class="ans" style="font-size:15px">'
-            +(m.correct.length ? m.correct.map(x=>fmtAngle(x,m.unit)).join("・") : "なし")+'</span>';
+            +(m.correct.length ? m.correct.map(x=>fmtAngle(x,m.unit)).join("・") : "⊘ この中にはない")+'</span>';
         }else{
           d.innerHTML='<span>'+fmtQuestion(m.f,m.deg,m.unit)+'</span><span class="ans">'+fmtVal(m.ans)+'</span>';
         }
