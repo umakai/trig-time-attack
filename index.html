@@ -1009,6 +1009,8 @@
 
   // ---- MathML renderers (native browser typesetting) ----
   // a token string like "√3", "2π", "1", "π" -> MathML inner markup
+  // a minus after "(" or "=" is inferred as subtraction and gains padding on both sides
+  const MO_NEG='<mo form="prefix" lspace="0em" rspace="0.15em">−</mo>';   // a hair of space after the sign: with none, the minus is easy to miss on a button
   function mtok(s){
     s=String(s);
     let out="", i=0;
@@ -1030,7 +1032,7 @@
   function frac(n,d){ return '<mfrac><mrow>'+mtok(n)+'</mrow><mrow>'+mtok(d)+'</mrow></mfrac>'; }
   function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
   function fmtAngle(deg,unit){
-    if(unit!=="rad") return '<math><mn>'+String(deg).replace("-","−")+'</mn><mo>°</mo></math>';
+    if(unit!=="rad") return '<math>'+(deg<0?MO_NEG:'')+'<mn>'+Math.abs(deg)+'</mn><mo>°</mo></math>';   // sign as its own token, so it spaces like the radian case
     if(deg===0) return '<math><mn>0</mn></math>';
     const neg=deg<0;
     let n=Math.abs(deg), d=180;
@@ -1039,12 +1041,16 @@
     if(d===1)      core = n===1 ? "<mi>π</mi>" : "<mn>"+n+"</mn><mi>π</mi>";
     else if(n===1) core = frac("π",d);
     else           core = frac(n,d)+"<mi>π</mi>";   // textbook style: fraction first, then π (e.g. 2/3 π)
-    return '<math>'+(neg?'<mo>−</mo>':'')+core+'</math>';
+    return '<math>'+(neg?MO_NEG:'')+core+'</math>';
   }
   function fmtQuestion(f,deg,unit){
     // function name and angle in a single MathML row -> unified font & baseline
     const ang=fmtAngle(deg,unit).replace(/^<math>/,"").replace(/<\/math>$/,"");
-    return '<math><mi mathvariant="normal" class="mfn">'+f+'</mi><mspace width="0.15em"></mspace>'+ang+'</math>';
+    // "sin −60°" could be read as −(sin 60°); a negative argument needs brackets
+    const body = deg<0
+      ? '<mo lspace="0em" rspace="0em">(</mo>'+ang+'<mo lspace="0em" rspace="0em">)</mo>'
+      : '<mspace width="0.15em"></mspace>'+ang;
+    return '<math><mi mathvariant="normal" class="mfn">'+f+'</mi>'+body+'</math>';
   }
   function fmtVal(v){
     if(v==="none") return "定義なし";
@@ -1057,7 +1063,7 @@
     }else{
       core=mtok(s);
     }
-    return '<math>'+(neg?'<mo>−</mo>':'')+core+'</math>';
+    return '<math>'+(neg?MO_NEG:'')+core+'</math>';
   }
 
   // ---------- question ----------
@@ -1069,8 +1075,8 @@
     else{
       const neg=v.startsWith("-");
       const s=neg?v.slice(1):v;
-      if(s.includes("/")){ const p=s.split("/"); core=(neg?'<mo>−</mo>':'')+frac(p[0],p[1]); }
-      else{ core=(neg?'<mo>−</mo>':'')+mtok(s); }
+      if(s.includes("/")){ const p=s.split("/"); core=(neg?MO_NEG:'')+frac(p[0],p[1]); }
+      else{ core=(neg?MO_NEG:'')+mtok(s); }
     }
     return '<math><mi mathvariant="normal" class="mfn">'+f+'</mi><mspace width="0.15em"></mspace><mi>θ</mi><mo>=</mo>'+core+'</math>';
   }
