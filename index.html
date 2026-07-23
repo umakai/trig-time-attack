@@ -996,7 +996,7 @@
         ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br>値に当てはまる角を<b>すべて</b>選ぶ練習。ミスすると<b>図解つき</b>で確認できます。"
         : "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br><b>単位円</b>を見ながらじっくり練習。ミスすると<b>図解つき</b>で確認できます。")
       : (rev
-        ? "値に合う角を<b>すべて</b>選べたら <b class=\"pl\">+150点</b>、さらに<b>解1つにつき +25点</b>。<br>素早ければ <b class=\"pl\">+50点</b>（解が多いほど制限もゆるやか）。3連続からコンボ。ミスは <b class=\"mn\">−100点</b>（時間はそのまま）！"
+        ? "<b>すべて</b>選べたら <b class=\"pl\">+150点</b>、解1つにつき <b class=\"pl\">+25点</b>、素早ければ <b class=\"pl\">+50点</b>。<br>3連続からコンボ。ミスは <b class=\"mn\">−100点</b>（時間はそのまま）！"
         : "正解 <b class=\"pl\">+100点</b>、2秒以内なら <b class=\"pl\">+50点</b>、3連続からコンボボーナス。<br>ミスは <b class=\"mn\">−100点</b>＆残り時間 <b class=\"mn\">−3秒</b>！");
     syncChips();
   }
@@ -1222,7 +1222,7 @@
           inc=sols.filter(()=>Math.random()<0.55);
           if(inc.length===0) inc=[sols[Math.floor(Math.random()*sols.length)]];   // never ⊘ by accident
         }
-        board=shuffleArr(inc.concat(pool.slice(0,8-inc.length)));
+        board=inc.concat(pool.slice(0,8-inc.length)).sort((a,b)=>a-b);   // ascending: easier to scan, and it lays the 2π periodicity out in a line
         correct=inc.slice();
       }
       correct.sort((a,b)=>a-b);
