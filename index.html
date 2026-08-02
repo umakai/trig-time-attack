@@ -292,6 +292,7 @@
     font-weight:800;font-family:ui-monospace,Menlo,monospace;font-size:22px;
     color:var(--ok);opacity:0;pointer-events:none;
   }
+  .pop.ng{color:var(--ng);}
   .pop.show{animation:popup .8s ease-out;}
   @keyframes popup{0%{opacity:0;transform:translateY(10px);}25%{opacity:1;}100%{opacity:0;transform:translateY(-12px);}}
   .question{font-size:64px;font-weight:800;font-family:ui-monospace,"SF Mono",Menlo,monospace;display:flex;align-items:center;justify-content:center;}
@@ -307,6 +308,8 @@
 
   .qflash-ok{animation:okflash .3s;}
   @keyframes okflash{0%{color:var(--ok);}100%{color:var(--ink);}}
+  .qflash-ng{animation:ngflash .5s;}
+  @keyframes ngflash{0%,65%{color:var(--ng);}100%{color:var(--ink);}}
 
   .palette{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
   .palette button{
@@ -498,7 +501,7 @@
       </div>
       <div id="daily-cards"></div>
       <button class="rankbtn" id="btn-daily-rank" style="width:100%;margin-bottom:10px">🏆 今日のランキング</button>
-      <div class="dnote">全員が同じ問題・同じ順番に挑戦します。<b>記録に残るのは最初の1回だけ</b>。<br>途中でやめると記録は残りません。どちらか1つ完走すると連続日数が伸びます。<br>挑戦後は「もう一度挑戦」で何度でも走り直せます（記録なし）。</div>
+      <div class="dnote">全員が同じ問題・同じ順番。間違えると<b>同じ問題をやり直し</b>（+5秒）。<b>記録に残るのは最初の1回だけ</b>。<br>途中でやめると記録は残りません。どちらか1つ完走すると連続日数が伸びます。<br>挑戦後は「もう一度挑戦」で何度でも走り直せます（記録なし）。</div>
     </div>
 
     <div class="startwrap">
@@ -739,7 +742,7 @@
     d2:{name:"今日の数Ⅱ", tag:"弧度法・MIX・0〜2π",  unit:"rad"}
   };
   // daily is a fixed-question time trial: everyone answers the same 20, fastest wins
-  const DAILY_Q=20, DAILY_PEN=5, DAILY_BONUS=3000;   // ≒ one serious run, so a daily habit keeps pace with playing
+  const DAILY_Q=20, DAILY_PEN=5, DAILY_BONUS=3000, MISS_HOLD=550;   // ≒ one serious run, so a daily habit keeps pace with playing
   function fmtCs(cs){ return (cs/100).toFixed(2); }   // centiseconds -> "47.32"
   function dayKey(off){
     const d=new Date(Date.now()-4*3600*1000+(off||0)*86400000);   // the day flips at 4:00 AM
@@ -1014,7 +1017,7 @@
     }
     // every line is kept short enough to fit a narrow phone without wrapping mid-sentence
     $("rule-text").innerHTML = dly
-      ? "全員が<b>同じ"+DAILY_Q+"問</b>に<b>1日1回</b>。<br><b>解き終わるまでのタイム</b>を競います（ミス1つ <b class=\"mn\">+"+DAILY_PEN+"秒</b>）。<br>挑戦中は答えを出さず、あとで<b>まとめて復習</b>。"
+      ? "全員が<b>同じ"+DAILY_Q+"問</b>に<b>1日1回</b>。<br><b>正解するまで次に進めません</b>（ミス1つ <b class=\"mn\">+"+DAILY_PEN+"秒</b>）。<br>答えは出ません。終わってから<b>まとめて復習</b>。"
       : prac
       ? (rev
         ? "時間・スコアなし、<b>∞ 納得いくまで無限に</b>続きます。<br>値に当てはまる角を<b>すべて</b>選ぶ練習。ミスすると<b>図解つき</b>で確認できます。"
@@ -1204,7 +1207,7 @@
     }
     if(daily){
       setRevUI(false);
-      const q=daily.list[correctCount+missCount];   // fixed order: everyone gets the same 20
+      const q=daily.list[correctCount];   // fixed order; a miss keeps you on the same question
       const norm=((q.deg%360)+360)%360;
       cur={f:q.f,deg:q.deg,unit:DAILY_DEF[daily.ch].unit,ans:TABLE[q.f][norm]};
       $("question").innerHTML=fmtQuestion(q.f,q.deg,cur.unit);
@@ -1374,23 +1377,30 @@
       return;
     }
     if(daily){
-      const done=correctCount+missCount+1;
+      $("streak").textContent="";   // combos don't score here, so the ×n badge would mislead
+      const q=$("question");
       if(v===cur.ans){
         playOK();
         correctCount++; sumSec+=(nowT-qStart)/1000;
         streak++; maxStreak=Math.max(maxStreak,streak);
-        const q=$("question");
         q.classList.remove("qflash-ok"); void q.offsetWidth; q.classList.add("qflash-ok");
-      }else{
-        playNG();
-        missCount++; streak=0;
-        misses.push({f:cur.f,deg:cur.deg,unit:cur.unit,ans:cur.ans});
-        popup("+"+DAILY_PEN+"秒");   // the answer is withheld until the review after the run
+        $("score").textContent=correctCount+"/"+DAILY_Q;
+        if(correctCount>=DAILY_Q){ finish(); return; }
+        nextQuestion();
+        return;
       }
-      $("score").textContent=done+"/"+DAILY_Q;
-      $("streak").textContent="";   // combos don't score here, so the ×n badge would mislead
-      if(done>=DAILY_Q){ finish(); return; }
-      nextQuestion();
+      // wrong: pay 5s and stay on the same question. moving on regardless would make
+      // tapping at random cheaper than thinking, which is the opposite of the point
+      playNG();
+      missCount++; streak=0;
+      misses.push({f:cur.f,deg:cur.deg,unit:cur.unit,ans:cur.ans});
+      q.classList.remove("qflash-ng"); void q.offsetWidth; q.classList.add("qflash-ng");
+      popup("✕ ＋"+DAILY_PEN+"秒",true);   // the answer itself waits for the review after the run
+      setPaused(true);   // brief lock so the miss registers and a double-tap can't fire again
+      setTimeout(()=>{
+        if(!running) return;   // the run was abandoned while the miss was showing
+        setPaused(false);      // same question stays on screen; qStart is untouched
+      },MISS_HOLD);
       return;
     }
     if(v===cur.ans){
@@ -1424,9 +1434,10 @@
     }
   }
 
-  function popup(text){
+  function popup(text,ng){
     const p=$("pop");
     p.textContent=text;
+    p.classList.toggle("ng",!!ng);
     p.classList.remove("show"); void p.offsetWidth; p.classList.add("show");
   }
 
@@ -1604,7 +1615,7 @@
           time=(performance.now()-dailyStart)/1000+DAILY_PEN*missCount;
           $("timenum").textContent=time.toFixed(1);
           const fill=$("timefill");
-          fill.style.width=((correctCount+missCount)/DAILY_Q*100)+"%";
+          fill.style.width=(correctCount/DAILY_Q*100)+"%";
           fill.classList.remove("low");
           return;
         }
@@ -1645,7 +1656,7 @@
       const ch=daily.ch, dd=loadDaily();
       const seen=new Set(), uniq=[];
       misses.forEach(m=>{ const kk=m.f+m.deg; if(!seen.has(kk)){ seen.add(kk); uniq.push({f:m.f,deg:m.deg,unit:m.unit}); }});
-      const dnf = (correctCount+missCount) < DAILY_Q;   // a partial time can't be compared with a full run
+      const dnf = correctCount < DAILY_Q;   // a partial time can't be compared with a full run
       dd[ch]={done:true, tm:1, dnf:dnf, score:(dnf?null:dailyCs), misses:uniq, reviewed:uniq.length===0, sent:dnf};
       lastDailyCh=ch;
       const today=dayKey(), yest=dayKey(-1);
@@ -1675,7 +1686,7 @@
       $("btn-rank-result").style.display="none";
       $("btn-daily-review").style.display="none";
     }else if(daily){
-      const full = (correctCount+missCount) >= DAILY_Q;
+      const full = correctCount >= DAILY_Q;
       $("r-lab").textContent = !full ? "記録なし" : noRec ? "タイム（練習）" : "タイム（秒）";
       $("r-score").textContent = full ? fmtCs(dailyCs) : "–";
       $("r-new").style.display="none";
