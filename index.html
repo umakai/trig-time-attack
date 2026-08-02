@@ -722,6 +722,7 @@
   let endAt=0, pausedAt=0;   // real-clock deadline; setInterval drift must not stretch the game
   let dailyStart=0;          // daily counts up instead of down
   let lastDailyCh=null;      // which daily just finished, for the review button on the result screen
+  let lastRankKey=null;      // which ranking the result screen's button should open
   function setPaused(v){
     if(v===paused) return;
     paused=v;
@@ -1387,7 +1388,7 @@
         popup("+"+DAILY_PEN+"秒");   // the answer is withheld until the review after the run
       }
       $("score").textContent=done+"/"+DAILY_Q;
-      $("streak").textContent = streak>=2 ? "×"+streak : "";
+      $("streak").textContent="";   // combos don't score here, so the ×n badge would mislead
       if(done>=DAILY_Q){ finish(); return; }
       nextQuestion();
       return;
@@ -1690,6 +1691,7 @@
       }
       $("btn-rank-submit").style.display="none";
       $("btn-rank-result").style.display = noRec ? "none" : "";
+      lastRankKey = "daily-"+daily.ch;   // ...not whatever the home settings happen to be
       $("btn-daily-review").style.display = (!noRec && missCount) ? "" : "none";
     }else{
       $("btn-daily-review").style.display="none";
@@ -1702,6 +1704,7 @@
       const showSubmit = isNew && score>0 && RANKED[k];
       $("btn-rank-submit").style.display = showSubmit ? "" : "none";
       $("btn-rank-result").style.display = (RANKED[k] && !showSubmit) ? "" : "none";
+      lastRankKey = RANKED[k] ? k : null;
       const bestNow = isNew ? score : (prev!==undefined ? prev : score);
       $("r-best").textContent = "このモードのベスト "+bestNow;
       updateBestView();
@@ -1710,7 +1713,7 @@
     $("r-correct").textContent=correctCount;
     const total=correctCount+missCount;
     $("r-acc").textContent = total? Math.round(correctCount/total*100)+"%" : "-";
-    $("r-max").textContent=maxStreak;
+    $("r-max").textContent = daily ? "—" : maxStreak;
     $("r-miss").textContent=missCount;
     const list=$("miss-list");
     list.innerHTML="";
@@ -1909,7 +1912,7 @@
     }
   }
   $("btn-rank").addEventListener("click",()=>openRanking(RANKED[skey()]?skey():"mix-deg-q1"));
-  $("btn-rank-result").addEventListener("click",()=>openRanking(RANKED[skey()]?skey():"mix-deg-q1"));
+  $("btn-rank-result").addEventListener("click",()=>openRanking(lastRankKey || (RANKED[skey()]?skey():"mix-deg-q1")));
   $("btn-daily-rank").addEventListener("click",()=>openRanking("daily-d1"));
   $("btn-mp-plays").addEventListener("click",()=>{
     $("mp-overlay").classList.remove("show");
