@@ -216,6 +216,7 @@
   .dbtn.dim{background:var(--panel-hi);color:var(--ink-dim);cursor:default;}
   .dbtn.review{background:none;border:1px solid var(--gold);color:var(--gold);}
   .dbtn.retry{background:none;border:1px solid var(--panel-hi);color:var(--ink-dim);font-size:13.5px;padding:10px;}
+  .dbest{text-align:left;margin-top:9px;}
   .dresult{
     display:flex;justify-content:space-between;align-items:center;
     background:rgba(74,222,128,.08);border-radius:10px;padding:9px 12px;margin-top:10px;
@@ -507,7 +508,7 @@
     <div class="startwrap">
       <div class="bestline" id="best-view"></div>
       <button class="start-btn" id="btn-start">スタート</button>
-      <button class="verbtn" id="btn-ver">v1.5.0 ｜ 更新履歴</button>
+      <button class="verbtn" id="btn-ver">v1.5.1 ｜ 更新履歴</button>
     </div>
   </div>
 
@@ -540,6 +541,7 @@
       <div class="lab" id="r-lab">スコア</div>
       <div class="newrec" id="r-new" style="display:none">🏆 ベスト更新！</div>
       <div class="bestnow" id="r-best"></div>
+      <div class="bestnow" id="r-trend" style="color:var(--ink)"></div>
       <div class="bestnow" id="r-avg"></div>
       <button class="rankbtn" id="btn-rank-submit" style="display:none">🏆 ランキングに登録</button>
       <button class="rankbtn" id="btn-rank-result" style="display:none">🏆 ランキングを見る</button>
@@ -612,7 +614,7 @@
     </div>
     <div class="mp-news" id="mp-news">
       <button class="nx" id="mp-news-x">×</button>
-      📢 <b>NEW</b>　🗓️ <b>デイリーが速さ勝負に！</b> 全員同じ<b>20問</b>を解き終わるまでのタイムを競います（ミスは +5秒）。答えは挑戦後の復習でまとめて確認。数Ⅱの範囲は <b>0〜2π</b> になりました。
+      📢 <b>NEW</b>　🗓️ <b>デイリーが速さ勝負に！</b> 全員同じ<b>20問</b>を解き終わるまでのタイムを競います（ミスは +5秒・間違えると同じ問題をやり直し）。<b>自己最速</b>とタイムの推移も見られます。
     </div>
     <div class="mp-badge">
       <span class="mp-emoji" id="mp-emoji">🔰</span>
@@ -628,10 +630,12 @@
       <div class="stat"><div class="v" id="mp-pract">0</div><div class="k">練習</div></div>
     </div>
     <button class="rankbtn" id="btn-mp-plays" style="width:100%;margin-bottom:6px">🏆 回数ランキングを見る</button>
-    <div class="mp-sec">平均回答時間の推移（ランクモード・正解のみ）</div>
+    <div class="mp-sec">記録の推移</div>
+    <div class="seg" id="mp-chart-ptabs" style="margin-bottom:5px"></div>
     <div class="seg" id="mp-chart-tabs" style="margin-bottom:6px"></div>
     <div id="mp-chart"></div>
-    <div class="mp-sec">モード別ベスト（ランクモード）</div>
+    <div class="rank-sub" id="mp-chart-note" style="text-align:left;margin-top:6px"></div>
+    <div class="mp-sec">モード別ベスト</div>
     <div id="mp-top"></div>
     <div class="mp-sec">最近のプレイ</div>
     <div id="mp-recent"></div>
@@ -672,6 +676,7 @@
 <div class="overlay" id="ver-overlay">
   <div class="fb pausebox changelog">
     <div class="pz-title" style="text-align:center">更新履歴</div>
+    <p><b>v1.5.1</b> 📈 デイリーの<b>自己最速</b>と<b>タイムの推移</b>が見られるようになりました。カードには自己最速と前回のタイム、マイページの「記録の推移」にはデイリーのグラフを追加。「モード別ベスト」にもデイリーが並びます。</p>
     <p><b>v1.5.0</b> 🗓️ デイリーチャレンジが<b>タイムアタック方式</b>に！全員が同じ<b>20問</b>を解き終わるまでの<b>速さ</b>で競います（ミス1つにつき +5秒）。挑戦中は答えを出さず、終わってから<b>まとめて復習</b>する形になりました。今日の数Ⅱの範囲は <b>0〜2π</b> に変更しています。</p>
     <p><b>v1.4.1</b> 🏆 逆引きに<b>オンラインランキング</b>が登場！数Ⅰ・数Ⅱの2部門。逆引きチャレンジの「ランキングを見る」から。ベスト更新時に登録できます（参加は任意・順引きとは別集計）。</p>
     <p><b>v1.4.0</b> 🔄 <b>逆引きモード</b>を追加！「sin θ = √3/2 になる角は？」——値から角度を全部探す新しい遊び方。出題設定の「出題の向き」から切り替え、タイムアタックでも練習でも遊べます。逆引きのミスは<b>時間ペナルティなし</b>（−100点のみ・速答基準は4秒）。弧度法は<b>0〜2π</b>と<b>−2π〜4π</b>の2種類から選べます（記録は端末内のみ）。</p>
@@ -769,6 +774,30 @@
     return d;
   }
   function saveDaily(d){ try{ localStorage.setItem("tta-daily",JSON.stringify(d)); }catch(e){} }
+  // daily runs get their own log: the shared 100-entry history would drop the oldest days
+  // exactly for the students who play every day. {d:dayKey, t:centiseconds, m:misses}
+  function loadDlog(){
+    let o={d1:[],d2:[]};
+    try{ const r=JSON.parse(localStorage.getItem("tta-dlog")||"{}"); o.d1=r.d1||[]; o.d2=r.d2||[]; }catch(e){}
+    return o;
+  }
+  function saveDlog(o){ try{ localStorage.setItem("tta-dlog",JSON.stringify(o)); }catch(e){} }
+  function pushDlog(ch,cs,ms){
+    const o=loadDlog(), a=o[ch]||[];
+    const day=dayKey();
+    if(!a.some(x=>x.d===day)){ a.push({d:day,t:cs,m:ms}); }   // the record is the first run of the day
+    o[ch]=a.slice(-120);   // ~4 months
+    saveDlog(o);
+  }
+  function dlogBest(ch){
+    const a=loadDlog()[ch]||[];
+    return a.length ? Math.min(...a.map(x=>x.t)) : null;
+  }
+  function dlogPrev(ch){
+    const a=loadDlog()[ch]||[], day=dayKey();
+    for(let i=a.length-1;i>=0;i--) if(a[i].d!==day) return a[i].t;
+    return null;
+  }
   function renderDaily(){
     sendDailyScore("d1"); sendDailyScore("d2");   // self-heal: push any unsent result of today
     const d=loadDaily();
@@ -798,6 +827,20 @@
         inner+='<button class="dbtn retry" data-retry="'+ch+'">🔁 もう一度挑戦（記録なし）</button>';
       }else{
         inner+='<button class="dbtn" data-go="'+ch+'">挑戦する（1日1回）</button>';
+      }
+      // personal best / previous time — before the run this is the target for today
+      const bst=dlogBest(ch), prv=dlogPrev(ch);
+      if(bst!=null){
+        let line='自己最速 <b style="color:var(--ok)">'+fmtCs(bst)+'秒</b>';
+        if(prv!=null){
+          line+='　／　前回 <b>'+fmtCs(prv)+'秒</b>';
+          if(st && st.done && st.tm && !st.dnf && st.score!=null){
+            const df=(st.score-prv)/100;
+            line+='（<b style="color:'+(df<0?"var(--ok)":"var(--ng)")+'">'+(df<0?"−":"＋")+Math.abs(df).toFixed(2)+'秒</b>）';
+          }
+        }
+        inner=inner.replace('<button class="dbtn',
+          '<div class="rank-sub dbest">'+line+'</div><button class="dbtn');   // sits just above the buttons
       }
       card.innerHTML=inner;
       box.appendChild(card);
@@ -1031,7 +1074,7 @@
   updateBestView();
   try{ if(!localStorage.getItem("tta-seen-daily")) $("new-daily").style.display=""; }catch(e){}
   try{ if(!localStorage.getItem("tta-seen-snd")) $("new-snd").style.display=""; }catch(e){}
-  const NEWS_VER="v1.5.0";   // bump when mp-news text changes
+  const NEWS_VER="v1.5.1";   // bump when mp-news text changes
   try{ if(localStorage.getItem("tta-news-seen")!==NEWS_VER) $("new-mp").style.display=""; }catch(e){}
 
   // ---- MathML renderers (native browser typesetting) ----
@@ -1399,6 +1442,11 @@
       setPaused(true);   // brief lock so the miss registers and a double-tap can't fire again
       setTimeout(()=>{
         if(!running) return;   // the run was abandoned while the miss was showing
+        if(document.hidden){   // went to the background mid-hold: park it, don't run the clock unattended
+          $("question").style.visibility="hidden";
+          $("pause-overlay").classList.add("show");
+          return;              // stays paused; the resume button unpauses
+        }
         setPaused(false);      // same question stays on screen; qStart is untouched
       },MISS_HOLD);
       return;
@@ -1657,6 +1705,7 @@
       const seen=new Set(), uniq=[];
       misses.forEach(m=>{ const kk=m.f+m.deg; if(!seen.has(kk)){ seen.add(kk); uniq.push({f:m.f,deg:m.deg,unit:m.unit}); }});
       const dnf = correctCount < DAILY_Q;   // a partial time can't be compared with a full run
+      if(!dnf) pushDlog(ch,dailyCs,missCount);
       dd[ch]={done:true, tm:1, dnf:dnf, score:(dnf?null:dailyCs), misses:uniq, reviewed:uniq.length===0, sent:dnf};
       lastDailyCh=ch;
       const today=dayKey(), yest=dayKey(-1);
@@ -1685,6 +1734,7 @@
       $("btn-rank-submit").style.display="none";
       $("btn-rank-result").style.display="none";
       $("btn-daily-review").style.display="none";
+      $("r-trend").innerHTML="";
     }else if(daily){
       const full = correctCount >= DAILY_Q;
       $("r-lab").textContent = !full ? "記録なし" : noRec ? "タイム（練習）" : "タイム（秒）";
@@ -1700,12 +1750,30 @@
           : DAILY_DEF[daily.ch].name+"・"+DAILY_Q+"問"
             + (missCount ? "（ミス "+missCount+" ＝ +"+(DAILY_PEN*missCount)+"秒 込み）" : "（ノーミス！）");
       }
+      const dBest=dlogBest(daily.ch);
+      const offRec=(loadDaily()[daily.ch]||{});
+      const todayRec=(offRec.tm && !offRec.dnf && offRec.score!=null) ? offRec.score : null;
+      // a retry measures itself against today's official run, not against yesterday
+      const cmp = noRec ? (todayRec!=null ? todayRec : dlogPrev(daily.ch)) : dlogPrev(daily.ch);
+      const cmpLab = (noRec && todayRec!=null) ? "今日の記録" : "前回";
+      let trend="";
+      if(full && dBest!=null){
+        trend='自己最速 <b style="color:var(--ok)">'+fmtCs(dBest)+'秒</b>';
+        if(cmp!=null){
+          const df=(dailyCs-cmp)/100;
+          trend+='　／　'+cmpLab+' <b>'+fmtCs(cmp)+'秒</b>（<b style="color:'+(df<0?"var(--ok)":"var(--ng)")+'">'
+            +(df<0?"−":"＋")+Math.abs(df).toFixed(2)+'秒</b>）';
+        }
+        if(!noRec && dailyCs<=dBest) trend+='　🎉 <b style="color:var(--ok)">自己最速！</b>';
+      }
+      $("r-trend").innerHTML=trend;
       $("btn-rank-submit").style.display="none";
       $("btn-rank-result").style.display = noRec ? "none" : "";
       lastRankKey = "daily-"+daily.ch;   // ...not whatever the home settings happen to be
       $("btn-daily-review").style.display = (!noRec && missCount) ? "" : "none";
     }else{
       $("btn-daily-review").style.display="none";
+      $("r-trend").innerHTML="";
       $("r-lab").textContent="スコア";
       // best score check
       const bests=loadBests(), k=skey(), prev=bests[k];
@@ -2105,23 +2173,67 @@
   });
   // ---------- answer-speed chart (device-local, SVG) ----------
   let chartMode=null;
+  let chartGroup="main";
+  function chartGroups(){
+    // which groups have anything to show
+    const st=loadStats();
+    const withA=st.hist.filter(h=>h.a!=null && RANKED[h.k]);
+    const keys=[...new Set(withA.map(h=>h.k))];
+    const dl=loadDlog();
+    const g={};
+    const mainK=keys.filter(k=>k.indexOf("rev-")!==0), revK=keys.filter(k=>k.indexOf("rev-")===0);
+    if(mainK.length) g.main={name:"実力", keys:mainK};
+    if(revK.length)  g.rev ={name:"逆引き", keys:revK};
+    const dk=["d1","d2"].filter(c=>(dl[c]||[]).length);
+    if(dk.length)    g.daily={name:"デイリー", keys:dk};
+    return g;
+  }
   function renderSpeedChart(){
     const st=loadStats();
     const withA=st.hist.filter(h=>h.a!=null && RANKED[h.k]);   // ranked modes only: speeds are comparable within a fixed question pool
-    const tabs=$("mp-chart-tabs"), box=$("mp-chart");
-    const modes=[...new Set(withA.map(h=>h.k))];
-    if(!modes.length){
-      tabs.innerHTML="";
-      box.innerHTML='<div class="rank-sub" style="padding:8px 0">まだデータがありません（ランクモードのプレイから記録されます）</div>';
+    const tabs=$("mp-chart-tabs"), box=$("mp-chart"), ptabs=$("mp-chart-ptabs"), note=$("mp-chart-note");
+    const groups=chartGroups(), gk=Object.keys(groups);
+    if(!gk.length){
+      ptabs.innerHTML=""; tabs.innerHTML=""; note.innerHTML="";
+      box.innerHTML='<div class="rank-sub" style="padding:8px 0">まだデータがありません（ランクモード・逆引き・デイリーのプレイから記録されます）</div>';
       return;
     }
+    if(!gk.includes(chartGroup)) chartGroup=gk[0];
+    ptabs.innerHTML="";
+    ptabs.style.display = gk.length>1 ? "" : "none";
+    gk.forEach(k=>{
+      const b=document.createElement("button");
+      b.textContent=groups[k].name; b.style.fontSize="11px";
+      if(k===chartGroup) b.classList.add("sel");
+      b.addEventListener("click",()=>{ chartGroup=k; chartMode=null; renderSpeedChart(); });
+      ptabs.appendChild(b);
+    });
+    if(chartGroup==="daily"){
+      const keys=groups.daily.keys;
+      if(!keys.includes(chartMode)) chartMode=keys[0];
+      tabs.innerHTML="";
+      keys.forEach(c=>{
+        const b=document.createElement("button");
+        b.textContent=DAILY_DEF[c].name; b.style.fontSize="11px";
+        if(c===chartMode) b.classList.add("sel");
+        b.addEventListener("click",()=>{ chartMode=c; renderSpeedChart(); });
+        tabs.appendChild(b);
+      });
+      const log=(loadDlog()[chartMode]||[]).slice(-20);
+      box.innerHTML=speedChartSVG(log.map(x=>x.t/100),true);
+      const best=Math.min(...log.map(x=>x.t));
+      note.innerHTML='自己最速 <b style="color:var(--ok)">'+fmtCs(best)+'秒</b>　※ 問題は毎日変わります。1〜2週間の傾向で見てください';
+      return;
+    }
+    note.innerHTML="";
+    const modes=groups[chartGroup].keys;
     // fixed order: BASIC -> ADVANCED -> EXPERT, then any custom modes
     const ORDER=Object.keys(RANKED);
     modes.sort((a,b)=>{
       const ra=ORDER.indexOf(a), rb=ORDER.indexOf(b);
       return (ra<0?ORDER.length:ra)-(rb<0?ORDER.length:rb);
     });
-    if(!modes.includes(chartMode)) chartMode=withA[0].k;   // default: most recently played
+    if(!modes.includes(chartMode)) chartMode=modes[0];
     tabs.innerHTML="";
     modes.forEach(m=>{
       const b=document.createElement("button");
@@ -2135,29 +2247,31 @@
     const data=withA.filter(h=>h.k===chartMode).slice(0,20).reverse().map(h=>h.a);
     box.innerHTML=speedChartSVG(data);
   }
-  function speedChartSVG(data){
+  function speedChartSVG(data,daily){
     const W=292,H=130,L=34,R=10,T=14,B=20;
+    if(!data.length) return '<div class="rank-sub" style="padding:8px 0">まだデータがありません</div>';
     let mn=Math.min(...data), mx=Math.max(...data);
-    if(mx-mn<0.4){ const mid=(mn+mx)/2; mn=mid-0.2; mx=mid+0.2; }
+    const flat=daily?2:0.4, half=daily?1:0.2;
+    if(mx-mn<flat){ const mid=(mn+mx)/2; mn=mid-half; mx=mid+half; }
     const X=i=>data.length===1 ? (L+(W-L-R)/2) : L+i*(W-L-R)/(data.length-1);
     const Y=v=>T+(mx-v)/(mx-mn)*(H-T-B);
     let s='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="max-width:100%">';
     [mx,(mn+mx)/2,mn].forEach(v=>{
       s+='<line x1="'+L+'" y1="'+Y(v)+'" x2="'+(W-R)+'" y2="'+Y(v)+'" stroke="var(--panel-hi)" stroke-width="1"/>'
-        +'<text x="'+(L-4)+'" y="'+(Y(v)+3.5)+'" text-anchor="end" font-size="9" fill="var(--ink-dim)">'+v.toFixed(1)+'s</text>';
+        +'<text x="'+(L-4)+'" y="'+(Y(v)+3.5)+'" text-anchor="end" font-size="9" fill="var(--ink-dim)">'+v.toFixed(daily?0:1)+(daily?'秒':'s')+'</text>';
     });
     if(data.length>1){
       const pts=data.map((v,i)=>X(i)+","+Y(v)).join(" ");
       s+='<polyline points="'+pts+'" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round"/>';
     }
     data.forEach((v,i)=>{
-      const last=i===data.length-1;
-      s+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="'+(last?4:2.5)+'" fill="var(--gold)"'+(last?'':' opacity=".7"')+'/>';
+      const last=i===data.length-1, best=daily && v===Math.min(...data);
+      s+='<circle cx="'+X(i)+'" cy="'+Y(v)+'" r="'+(last||best?4:2.5)+'" fill="'+(best?'var(--ok)':'var(--gold)')+'"'+(last||best?'':' opacity=".7"')+'/>';
       if(last){
-        s+='<text x="'+Math.min(X(i),W-R-24)+'" y="'+Math.max(11,Y(v)-8)+'" text-anchor="middle" font-size="10" font-weight="800" fill="var(--gold)">'+v.toFixed(2)+'s</text>';
+        s+='<text x="'+Math.min(X(i),W-R-24)+'" y="'+Math.max(11,Y(v)-8)+'" text-anchor="middle" font-size="10" font-weight="800" fill="var(--gold)">'+v.toFixed(2)+(daily?'秒':'s')+'</text>';
       }
     });
-    s+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="var(--ink-dim)">直近'+data.length+'プレイの推移（下ほど速い）</text>';
+    s+='<text x="'+((L+W-R)/2)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" fill="var(--ink-dim)">直近'+data.length+(daily?'日のタイム':'プレイの推移')+'（下ほど速い）</text>';
     return s+'</svg>';
   }
 
@@ -2190,6 +2304,10 @@
       label:shortModeKey(k),
       score:(bests[k]!==undefined ? bests[k] : "—")
     }));
+    ["d1","d2"].forEach(c=>{
+      const b=dlogBest(c);
+      if(b!=null) modeRows.push({rank:"",label:DAILY_DEF[c].name,score:fmtCs(b)+"秒"});
+    });
     renderRows($("mp-top"),modeRows);
     const recent=st.hist.slice(0,5)
       .map(h=>({rank:"",label:shortModeKey(h.k)+"　"+fmtDate(h.t),score:(h.d?fmtCs(h.s)+"秒":h.s)}));
