@@ -1684,7 +1684,7 @@
     const noRec = !!(daily && daily.retry);   // retries are pure practice: no record, no ranking, no streak
     // daily record = elapsed + 5s per miss, in centiseconds (Firestore wants a plain int)
     const dailyCs = daily
-      ? Math.min(30000, Math.round(((performance.now()-dailyStart)/1000+DAILY_PEN*missCount)*100))
+      ? Math.min(120000, Math.round(((performance.now()-dailyStart)/1000+DAILY_PEN*missCount)*100))   // 20 min; must stay under the Firestore rule's ceiling
       : 0;
     // record personal stats (device-local)
     const st=loadStats();
@@ -2093,7 +2093,11 @@
       invalidateRankCache(k);   // show the fresh board including the new entry
       openRanking(k);
     }catch(e){
-      alert("登録に失敗しました。通信環境を確認してください。");
+      // permission-denied means the value was refused, not that the network failed
+      const denied = e && (e.code==="permission-denied" || String(e).indexOf("permission")>=0);
+      alert(denied
+        ? "登録できませんでした。スコアが登録できる範囲を超えている可能性があります。先生に伝えてください。"
+        : "登録に失敗しました。通信環境を確認してください。");
     }finally{
       btn.disabled=false; btn.textContent="🏆 ランキングに登録";
     }
