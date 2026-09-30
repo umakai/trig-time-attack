@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数Ⅲ 計算ドリル</title>
+<meta name="description" content="微分・極限の計算問題を無限に出題。ノートで解いて、答えを見て、自分で○×をつける自己採点ドリル。">
+<style>
+  :root{
+    --bg:#14162B; --panel:#1F2240; --panel-hi:#2A2E55;
+    --ink:#EDEFFF; --ink-dim:#8B90B8; --gold:#FFC94D;
+    --ok:#4ADE80; --ng:#FF6B7A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{overscroll-behavior-y:none;}
+  html,body,button{touch-action:manipulation;}
+  button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;
+    display:flex;justify-content:center;min-height:100dvh;
+  }
+  .app{width:100%;max-width:440px;padding:14px 16px 0;display:flex;flex-direction:column;min-height:100dvh;}
+
+  .title{font-size:26px;font-weight:800;letter-spacing:.04em;margin:12px 0 2px;}
+  .title .accent{color:var(--gold);}
+  .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:16px;}
+
+  /* settings card — same parts as the trig app */
+  .scard{border:1px solid var(--panel-hi);border-radius:14px;padding:12px;margin-bottom:12px;}
+  .scard-title{font-size:12px;font-weight:800;letter-spacing:.14em;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  .scard-title::before{content:"";width:3px;height:13px;border-radius:2px;background:var(--gold);}
+  .srow{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .srow:last-child{margin-bottom:0;}
+  .srow .sl{width:34px;flex-shrink:0;font-size:12px;color:var(--ink-dim);font-weight:700;}
+  .seg{display:flex;gap:6px;flex:1;}
+  .seg button{
+    flex:1;padding:9px 2px;border:none;border-radius:10px;
+    background:var(--panel);color:var(--ink-dim);
+    font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
+  }
+  .seg button.sel{background:var(--gold);color:#1A1400;}
+  .seg.narrow button{font-size:11.5px;letter-spacing:-.02em;padding:9px 0;}
+  .seg.wrap{flex-wrap:wrap;}
+  .seg.wrap button{flex:0 1 auto;padding:8px 11px;font-size:12px;}
+  .seg button:disabled{opacity:.3;cursor:default;}
+
+  .stats{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--ink-dim);margin:2px 2px 10px;}
+  .stats b{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:15px;color:var(--ink);}
+  .stats .ok b{color:var(--ok);} .stats .ng b{color:var(--ng);}
+  .stats .rev{margin-left:auto;color:var(--gold);font-weight:700;font-size:12px;}
+
+  /* problem card */
+  .qcard{background:var(--panel);border-radius:14px;padding:14px 14px 16px;}
+  .qhead{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-dim);font-weight:700;letter-spacing:.06em;}
+  .qhead .num{font-family:ui-monospace,Menlo,monospace;}
+  .revtag{background:rgba(255,201,77,.14);color:var(--gold);border:1px solid rgba(255,201,77,.5);border-radius:6px;padding:1px 7px;font-size:11px;}
+  .qprompt{font-size:14px;margin:10px 0 2px;}
+  .mbox{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;}
+  /* no display override on <math>: "display:block" would replace MathML layout with plain boxes and stack every token */
+  .mbox math{margin:0 auto;}
+  .qmath{font-size:24px;padding:14px 2px 8px;}
+
+  .ans{border-top:1px dashed var(--panel-hi);margin-top:10px;padding-top:12px;}
+  .ans .method{font-size:11.5px;color:var(--ink-dim);font-weight:700;letter-spacing:.04em;margin-bottom:8px;}
+  .ans .step-label{display:inline-block;font-size:12px;font-weight:800;color:var(--gold);
+    background:rgba(255,201,77,.10);border-radius:6px;padding:2px 8px;margin-bottom:4px;}
+  .ans .step{font-size:18px;padding:4px 2px 10px;color:var(--ink-dim);}
+  .ans .final-label{font-size:12px;font-weight:800;color:var(--ok);margin-bottom:2px;}
+  .ans .final{font-size:22px;padding:4px 2px 6px;}
+
+  /* thumb zone */
+  .actions{position:sticky;bottom:0;margin-top:auto;padding:14px 0 max(16px,env(safe-area-inset-bottom));
+    background:linear-gradient(to bottom, rgba(20,22,43,0), var(--bg) 30%);}
+  .mainbtn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--gold);color:#1A1400;
+    font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .judge{display:flex;gap:10px;}
+  .judge button{flex:1;padding:16px 4px;border-radius:14px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .okbtn{background:rgba(74,222,128,.12);border:1.5px solid var(--ok);color:var(--ok);}
+  .ngbtn{background:rgba(255,107,122,.12);border:1.5px solid var(--ng);color:var(--ng);}
+  .hint{font-size:11.5px;color:var(--ink-dim);text-align:center;margin-top:8px;min-height:1em;}
+  [hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="title">数Ⅲ <span class="accent">計算</span>ドリル</div>
+  <div class="subtitle">ノートで解いて、答えを見て、自分で○×。</div>
+
+  <div class="scard">
+    <div class="scard-title">出題設定</div>
+    <div class="srow">
+      <div class="sl">分野</div>
+      <div class="seg narrow" id="seg-field">
+        <button data-v="d">導関数</button><button data-v="l">関数の極限</button><button data-v="s">数列の極限</button><button data-v="mix">MIX</button>
+      </div>
+    </div>
+    <div class="srow" id="row-sub" hidden>
+      <div class="sl">種類</div>
+      <div class="seg wrap" id="seg-sub"></div>
+    </div>
+    <div class="srow">
+      <div class="sl">難度</div>
+      <div class="seg" id="seg-level">
+        <button data-v="1">基本</button><button data-v="2">標準</button><button data-v="3">応用</button><button data-v="0">MIX</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <span>今日 <b id="st-n">0</b> 問</span>
+    <span class="ok">○ <b id="st-ok">0</b></span>
+    <span class="ng">× <b id="st-ng">0</b></span>
+    <span class="rev" id="st-rev"></span>
+  </div>
+
+  <div class="qcard">
+    <div class="qhead">
+      <span class="num" id="q-num"></span><span id="q-tag"></span>
+      <span class="revtag" id="q-rev" hidden>復習</span>
+    </div>
+    <div class="qprompt" id="q-prompt"></div>
+    <div class="mbox qmath" id="q-math"></div>
+    <div class="ans" id="ans" hidden>
+      <div class="method" id="a-method"></div>
+      <div id="a-steps"></div>
+      <div class="final-label">答え</div>
+      <div class="mbox final" id="a-final"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="mainbtn" id="btn-show">答えを見る</button>
+    <div class="judge" id="judge" hidden>
+      <button class="okbtn" id="btn-ok">○ 合ってた</button>
+      <button class="ngbtn" id="btn-ng">× 間違えた</button>
+    </div>
+    <div class="hint" id="hint">解けたら「答えを見る」</div>
+  </div>
+</div>
+
+<script>
+// ===== 数Ⅲ 計算ドリル : problem generator =====
+// Every expression is built as a pair {m: MathML, f: x => value}, so what is shown
+// and what is checked can never drift apart. Templates build answers in textbook form
+// directly (no symbolic simplifier), and each step line is an exact identity.
+(function(root){
+'use strict';
+
+// ---------- numbers ----------
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ const t=a%b; a=b; b=t; } return a; }
+function Q(p,q){ if(q===undefined) q=1; if(q<0){ p=-p; q=-q; } const g=gcd(p,q)||1; return [p/g,q/g]; }
+function ri(lo,hi){ return lo+Math.floor(Math.random()*(hi-lo+1)); }
+function nz(lo,hi){ let v; do{ v=ri(lo,hi); }while(v===0); return v; }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function coprime(gen){ let v; do{ v=gen(); }while(gcd(v[0],v[1])!==1); return v; }
+
+// ---------- MathML pieces ----------
+const NEG='<mo form="prefix" lspace="0em" rspace="0.15em">−</mo>';  // leading sign, never spaced like subtraction
+const PLUS='<mo>+</mo>', MINUS='<mo>−</mo>', DOTM='<mo>·</mo>';
+const TIGHT=' lspace="0em" rspace="0em"';
+const mn=k=>'<mn>'+k+'</mn>';
+const THIN='<mspace width="0.17em"></mspace>';
+const fnm=n=>'<mi mathvariant="normal">'+n+'</mi>';
+const par=s=>'<mo lspace="0em" rspace="0em">(</mo>'+s+'<mo lspace="0em" rspace="0em">)</mo>';
+const brace=s=>'<mo lspace="0em" rspace="0em">{</mo>'+s+'<mo lspace="0em" rspace="0em">}</mo>';
+const supm=(b,e)=>'<msup><mrow>'+b+'</mrow><mrow>'+e+'</mrow></msup>';
+const frm=(n,d)=>'<mfrac><mrow>'+n+'</mrow><mrow>'+d+'</mrow></mfrac>';
+const sqm=s=>'<msqrt>'+s+'</msqrt>';
+const XM='<mi>x</mi>', EM='<mi>e</mi>';
+const intM=k=>k<0 ? NEG+mn(-k) : mn(k);
+
+// ---------- expressions ----------
+const V=(m,f)=>({m,f});
+const X=V(XM,x=>x);
+const ONE=V('',()=>1);          // empty factor (x^0)
+const DOT=V(DOTM,()=>1);
+function N(k){ return V(intM(k),()=>k); }
+function RV(r){ const p=r[0],q=r[1]; return q===1 ? N(p) : V((p<0?NEG:'')+frm(mn(Math.abs(p)),mn(q)),()=>p/q); }
+function P(){ const fs=Array.prototype.slice.call(arguments); return V(fs.map(e=>e.m).join(''), x=>fs.reduce((a,e)=>a*e.f(x),1)); }
+function xp(n){ return n===0 ? ONE : n===1 ? X : V(supm(XM,mn(n)),x=>Math.pow(x,n)); }
+function FR(n,d){ return V(frm(n.m,d.m), x=>n.f(x)/d.f(x)); }
+function SF(k,den){ return V((k<0?NEG:'')+frm(mn(Math.abs(k)),den.m), x=>k/den.f(x)); }   // integer over expression
+function SQ(u){ return V(sqm(u.m), x=>Math.sqrt(u.f(x))); }
+function PAR(e){ return V(par(e.m), e.f); }
+function NEGV(e){ return V(NEG+e.m, x=>-e.f(x)); }
+function EXP(u){ return V(supm(EM,u.m), x=>Math.exp(u.f(x))); }
+function EPOW(k){ return k===1 ? V(EM,()=>Math.E) : V(supm(EM,intM(k)),()=>Math.exp(k)); }
+function PW(b,n,paren){ return V(supm(paren?par(b.m):b.m, intM(n)), x=>Math.pow(b.f(x),n)); }
+const FNS={sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log};
+// simple=true: monomial argument written without brackets (sin 3x); otherwise bracketed (sin(3x+1))
+function F(name,u,simple,pow){
+  const head = pow ? supm(fnm(name),mn(pow)) : fnm(name), g=FNS[name];
+  return V(THIN+head+(simple?THIN+u.m:par(u.m)), pow ? x=>Math.pow(g(u.f(x)),pow) : x=>g(u.f(x)));
+}
+
+// signed sum: terms = [[coef (int or [p,q]), expr|null], ...]
+function S(terms){
+  let m='', first=true; const fs=[];
+  for(const [c0,e] of terms){
+    const c=Array.isArray(c0)?c0:[c0,1];
+    if(c[0]===0) continue;
+    const neg=c[0]<0, ap=Math.abs(c[0]), q=c[1], body=e?e.m:'';
+    let mag;
+    if(body==='') mag = q===1 ? mn(ap) : frm(mn(ap),mn(q));
+    else if(ap===1 && q===1) mag=body;
+    else mag=(q===1 ? mn(ap) : frm(mn(ap),mn(q)))+body;
+    m += first ? (neg?NEG:'')+mag : (neg?MINUS:PLUS)+mag;
+    first=false;
+    fs.push([c[0]/c[1],e]);
+  }
+  if(first) return N(0);
+  const v=V(m, x=>fs.reduce((a,[k,e])=>a+k*(e?e.f(x):1),0));
+  v.sum=fs.length>1;
+  return v;
+}
+const C=(c,e)=>S([[c,e]]);
+const lin=(a,b)=>S([[a,X],[b,null]]);     // ax+b
+const linC=(b,a)=>S([[b,null],[a,X]]);    // b+ax
+const mono=a=>S([[a,X]]);
+const sg=k=>k<0?-1:1;
+// pull out the common factor and the sign, then put a positive term first: 2x+2 -> 2(x+1), -x-1 -> -(x+1), -2x+1 -> (1-2x)
+function tidy(terms){
+  let g=0; terms.forEach(t=>{ g=gcd(g,t[0]); });
+  const allNeg=terms.every(t=>t[0]<0), k=(allNeg?-1:1)*g;
+  let ts=terms.map(t=>[t[0]/k,t[1]]);
+  if(ts[0][0]<0){ const i=ts.findIndex(t=>t[0]>0); if(i>0){ const t=ts[i]; ts.splice(i,1); ts.unshift(t); } }
+  return {k, e:S(ts), n:ts.length};
+}
+const inner=t=>t.n>1?PAR(t.e):t.e;
+const signed=(k,e)=>k<0?NEGV(e):e;
+const factor=k=>k<0?PAR(N(k)):N(k);     // a number after "·"
+
+// ======================================================================
+// derivatives  (level 1 基本 / 2 標準 / 3 応用)
+// ======================================================================
+const T=[];
+function D(level,name,fn){ T.push({kind:'d',level,name,fn}); }
+function L(level,sub,name,fn){ T.push({kind:'l',level,sub,name,fn}); }
+const OUTER='外の微分 × 中の微分', PROD='積の微分', QUOT='商の微分';
+const away=(a,b)=>[-b/a+0.35,-b/a+3];   // stay on one side of the root of ax+b
+
+D(1,'合成関数（1次式のn乗）',()=>{
+  const [a,b]=coprime(()=>[pick([2,3,4,-2,-3]),nz(-5,5)]), n=ri(3,6), U=lin(a,b);
+  return {key:`pl${a},${b},${n}`, q:PW(U,n,true), a:C(n*a,PW(U,n-1,true)),
+    steps:[{label:OUTER, e:P(C(n,PW(U,n-1,true)),DOT,factor(a))}], dom:[-3,3]};
+});
+D(1,'合成関数（指数関数）',()=>{
+  let a,b; do{ a=nz(-4,4); b=ri(-3,3); }while(a===1&&b===0);
+  const U=b===0?mono(a):lin(a,b);
+  return {key:`el${a},${b}`, q:EXP(U), a:C(a,EXP(U)),
+    steps:[{label:OUTER, e:P(EXP(U),DOT,factor(a))}], dom:[-1.5,1.5]};
+});
+D(1,'合成関数（三角関数）',()=>{
+  const f=pick(['sin','cos','tan']); let k,b; do{ k=ri(2,5); b=Math.random()<0.5?0:nz(-3,3); }while(b!==0&&gcd(k,b)!==1);
+  const U=b===0?mono(k):lin(k,b), s=b===0;
+  let a,st;
+  if(f==='sin'){ a=C(k,F('cos',U,s)); st=P(F('cos',U,s),DOT,N(k)); }
+  else if(f==='cos'){ a=C(-k,F('sin',U,s)); st=P(NEGV(F('sin',U,s)),DOT,N(k)); }
+  else { a=FR(N(k),F('cos',U,s,2)); st=P(FR(N(1),F('cos',U,s,2)),DOT,N(k)); }
+  return {key:`tl${f}${k},${b}`, q:F(f,U,s), a, steps:[{label:OUTER,e:st}],
+    dom: f==='tan' ? [(-1.2-b)/k,(1.2-b)/k] : [-2,2]};
+});
+D(1,'合成関数（対数関数）',()=>{
+  const [a,b]=coprime(()=>[ri(2,5),nz(-5,5)]), U=lin(a,b);
+  return {key:`lg${a},${b}`, q:F('log',U,false), a:FR(N(a),U),
+    steps:[{label:OUTER, e:P(FR(N(1),U),DOT,N(a))}], dom:away(a,b)};
+});
+D(1,'合成関数（分数関数）',()=>{
+  const [a,b]=coprime(()=>[pick([2,3,-2,-3]),nz(-4,4)]), n=ri(2,4), U=lin(a,b);
+  return {key:`ip${a},${b},${n}`, q:FR(N(1),PW(U,n,true)), a:SF(-n*a,PW(U,n+1,true)),
+    steps:[{label:'負の指数と見て 外×中', e:P(C(-n,PW(U,-(n+1),true)),DOT,factor(a))}],
+    dom: a>0 ? away(a,b) : [-b/a-3,-b/a-0.35]};
+});
+D(1,'合成関数（無理関数）',()=>{
+  const [a,b]=coprime(()=>[ri(2,5),nz(-5,5)]), U=lin(a,b), r=Q(a,2);
+  const den = r[1]===1 ? SQ(U) : P(N(r[1]),SQ(U));
+  return {key:`sq${a},${b}`, q:SQ(U), a:FR(N(r[0]),den),
+    steps:[{label:OUTER, e:P(FR(N(1),P(N(2),SQ(U))),DOT,N(a))}], dom:away(a,b)};
+});
+
+D(2,'積の微分（多項式 × 指数関数）',()=>{
+  const n=ri(1,3), a=nz(-3,3), EA=EXP(mono(a)), t=tidy([[a,X],[n,null]]);
+  return {key:`xe${n},${a}`, q:P(xp(n),EA), a:C(t.k,P(xp(n-1),inner(t),EA)),
+    steps:[{label:PROD, e:S([[n,P(xp(n-1),EA)],[a,P(xp(n),EA)]])}], dom:[-2,2]};
+});
+D(2,'積の微分（多項式 × 対数関数）',()=>{
+  const n=ri(1,4), c=ri(1,3), LG=F('log',mono(c),true), I=S([[n,LG],[1,null]]);
+  return {key:`xl${n},${c}`, q:P(xp(n),LG), a: n===1 ? I : P(xp(n-1),PAR(I)),
+    steps:[{label:PROD, e:S([[n,P(xp(n-1),LG)],[1,P(xp(n),DOT,FR(N(1),X))]])}], dom:[0.3,4]};
+});
+D(2,'積の微分（指数関数 × 三角関数）',()=>{
+  const a=nz(-3,3), b=ri(1,3), f=pick(['sin','cos']), EA=EXP(mono(a)), B=mono(b);
+  const SN=F('sin',B,true), CS=F('cos',B,true);
+  const terms = f==='sin' ? [[a,SN],[b,CS]] : [[a,CS],[-b,SN]];
+  const t=tidy(terms);
+  const st = f==='sin' ? S([[a,P(EA,SN)],[b,P(EA,CS)]]) : S([[a,P(EA,CS)],[-b,P(EA,SN)]]);
+  return {key:`et${f}${a},${b}`, q:P(EA,f==='sin'?SN:CS), a:C(t.k,P(EA,inner(t))),
+    steps:[{label:PROD, e:st}], dom:[-1.5,1.5]};
+});
+D(2,'合成関数（三角関数のn乗）',()=>{
+  const f=pick(['sin','cos']), g=f==='sin'?'cos':'sin', n=ri(2,3), a=ri(1,3), A=mono(a);
+  const lower=n-1>1?n-1:undefined, sgn=f==='sin'?1:-1;
+  const second = f==='sin' ? C(a,F(g,A,true)) : PAR(C(-a,F(g,A,true)));
+  return {key:`tp${f}${n},${a}`, q:F(f,A,true,n), a:C(sgn*n*a,P(F(f,A,true,lower),F(g,A,true))),
+    steps:[{label:OUTER, e:P(C(n,F(f,A,true,lower)),DOT,second)}], dom:[-2,2]};
+});
+D(2,'合成関数（無理関数）',()=>{
+  const [a,c]=coprime(()=>[ri(1,4),ri(1,9)]), U=S([[a,xp(2)],[c,null]]);
+  return {key:`sq2${a},${c}`, q:SQ(U), a:FR(C(a,X),SQ(U)),
+    steps:[{label:OUTER, e:P(FR(N(1),P(N(2),SQ(U))),DOT,C(2*a,X))}], dom:[-2,2]};
+});
+D(2,'合成関数（対数関数）',()=>{
+  const [a,c]=coprime(()=>[ri(1,3),ri(1,9)]), U=S([[a,xp(2)],[c,null]]);
+  return {key:`lq${a},${c}`, q:F('log',U,false), a:FR(C(2*a,X),U),
+    steps:[{label:OUTER, e:P(FR(N(1),U),DOT,C(2*a,X))}], dom:[-2,2]};
+});
+D(2,'合成関数（指数関数）',()=>{
+  const a=nz(-3,3), b=ri(-3,3), EQ=EXP(S([[a,xp(2)],[b,X]]));
+  const d=S([[2*a,X],[b,null]]), t=tidy(b===0?[[2*a,X]]:[[2*a,X],[b,null]]);
+  return {key:`eq${a},${b}`, q:EQ, a:C(t.k,P(inner(t),EQ)),
+    steps:[{label:OUTER, e:P(EQ,DOT,PAR(d))}], dom:[-1.2,1.2]};
+});
+
+D(3,'商の微分（対数関数）',()=>{
+  const n=ri(1,3), c=ri(1,3), LG=F('log',mono(c),true);
+  return {key:`lx${n},${c}`, q:FR(LG,xp(n)), a:FR(S([[1,null],[-n,LG]]),xp(n+1)),
+    steps:[{label:QUOT, e:FR(S([[1,P(FR(N(1),X),DOT,xp(n))],[-n,P(xp(n-1),LG)]]),xp(2*n))}], dom:[0.3,4]};
+});
+D(3,'商の微分（分数関数）',()=>{
+  const c=ri(1,9), U=S([[1,xp(2)],[c,null]]);
+  return {key:`xq${c}`, q:FR(X,U), a:FR(S([[c,null],[-1,xp(2)]]),PW(U,2,true)),
+    steps:[{label:QUOT, e:FR(S([[1,PAR(U)],[-1,P(X,DOT,C(2,X))]]),PW(U,2,true))}], dom:[-3,3]};
+});
+D(3,'商の微分（分数関数）',()=>{
+  const c=nz(-5,5), U=lin(1,c);
+  return {key:`qx${c}`, q:FR(xp(2),U), a:FR(P(X,PAR(lin(1,2*c))),PW(U,2,true)),
+    steps:[{label:QUOT, e:FR(S([[2,P(X,PAR(U))],[-1,xp(2)]]),PW(U,2,true))}], dom:away(1,c)};
+});
+D(3,'商の微分（指数関数）',()=>{
+  const a=nz(-3,3), n=ri(1,2), EA=EXP(mono(a)), t=tidy([[a,X],[-n,null]]);
+  // (e^{ax}/x^n)' = e^{ax}(ax - n)/x^{n+1}
+  return {key:`ex${a},${n}`, q:FR(EA,xp(n)), a:signed(t.k,FR(C(Math.abs(t.k),P(inner(t),EA)),xp(n+1))),
+    steps:[{label:QUOT, e:FR(S([[a,P(EA,DOT,xp(n))],[-n,P(EA,DOT,n>1?xp(n-1):N(1))]]),xp(2*n))}], dom:[0.3,3]};
+});
+D(3,'商の微分（1次分数関数）',()=>{
+  let a,b,c,d; do{ a=nz(-4,4); b=nz(-5,5); c=ri(1,4); d=nz(-5,5); }while(a*d-b*c===0||gcd(a,b)!==1||gcd(c,d)!==1);
+  const U1=lin(a,b), U2=lin(c,d);
+  return {key:`ll${a},${b},${c},${d}`, q:FR(U1,U2), a:SF(a*d-b*c,PW(U2,2,true)),
+    steps:[{label:QUOT, e:FR(S([[a,PAR(U2)],[-1,P(PAR(U1),DOT,N(c))]]),PW(U2,2,true))}], dom:away(c,d)};
+});
+D(3,'商の微分（三角関数）',()=>{
+  const a=ri(1,3), f=pick(['sin','cos']), X1=X;
+  const SN=F('sin',X1,true), CS=F('cos',X1,true);
+  if(f==='sin'){
+    const DEN=S([[a,null],[1,CS]]);
+    return {key:`ts${a}`, q:FR(SN,DEN),
+      a: a===1 ? FR(N(1),DEN) : FR(S([[a,CS],[1,null]]),PW(DEN,2,true)),
+      steps:[{label:QUOT+'（sin²x + cos²x = 1）', e:FR(S([[1,P(PAR(DEN),CS)],[1,F('sin',X1,true,2)]]),PW(DEN,2,true))}],
+      dom:[-2.5,2.5]};
+  }
+  const DEN=S([[a,null],[1,SN]]);
+  return {key:`tc${a}`, q:FR(CS,DEN),
+    a: a===1 ? NEGV(FR(N(1),DEN)) : NEGV(FR(S([[a,SN],[1,null]]),PW(DEN,2,true))),
+    steps:[{label:QUOT+'（sin²x + cos²x = 1）', e:FR(S([[-1,P(PAR(DEN),SN)],[-1,F('cos',X1,true,2)]]),PW(DEN,2,true))}],
+    dom:[-1.2,2.5]};
+});
+D(3,'合成関数（対数・無理関数）',()=>{
+  const c=ri(1,9), R=SQ(S([[1,xp(2)],[c,null]])), ARG=S([[1,X],[1,R]]);
+  return {key:`ls${c}`, q:F('log',ARG,false), a:FR(N(1),R),
+    steps:[{label:OUTER, e:P(FR(N(1),ARG),DOT,PAR(S([[1,null],[1,FR(X,R)]])))}], dom:[-2,2]};
+});
+D(3,'積の微分（無理関数）',()=>{
+  const c=ri(2,9), U=S([[c,null],[-1,xp(2)]]), R=SQ(U), w=Math.sqrt(c)*0.8;
+  return {key:`xs${c}`, q:P(X,R), a:FR(S([[c,null],[-2,xp(2)]]),R),
+    steps:[{label:PROD, e:S([[1,R],[-1,P(X,DOT,FR(X,R))]])}], dom:[-w,w]};
+});
+
+// ======================================================================
+// limits
+// ======================================================================
+const RAT=(r,e)=>(r[0]===r[1]) ? e : P(RV(r),DOT,e);   // "(a/b)·(...)" unless the ratio is 1
+function distinct(lo,hi,lo2,hi2){ let a,b; do{ a=ri(lo,hi); b=ri(lo2,hi2); }while(a===b||a===0||b===0); return [a,b]; }
+
+L(1,'t','sin x / x → 1',()=>{
+  const [a,b]=distinct(1,6,1,6), SA=F('sin',mono(a),true);
+  return {key:`ls${a},${b}`, q:FR(SA,mono(b)), a:RV(Q(a,b)), to:0,
+    steps:[{label:'sin θ / θ の形をつくる', e:RAT(Q(a,b),FR(SA,mono(a)))}]};
+});
+L(1,'el','(eˣ − 1) / x → 1',()=>{
+  const [a,b]=distinct(-5,5,1,5), U=S([[1,EXP(mono(a))],[-1,null]]);
+  return {key:`le${a},${b}`, q:FR(U,mono(b)), a:RV(Q(a,b)), to:0,
+    steps:[{label:'(e^θ − 1) / θ の形をつくる', e:RAT(Q(a,b),FR(U,mono(a)))}]};
+});
+L(1,'el','log(1 + x) / x → 1',()=>{
+  const [a,b]=distinct(-5,5,1,5), U=F('log',linC(1,a),false);
+  return {key:`ll${a},${b}`, q:FR(U,mono(b)), a:RV(Q(a,b)), to:0,
+    steps:[{label:'log(1 + θ) / θ の形をつくる', e:RAT(Q(a,b),FR(U,mono(a)))}]};
+});
+L(1,'fr','分数関数の極限（x → ∞）',()=>{
+  const a=nz(-5,5), b=nz(-6,6), c=nz(-9,9), d=ri(1,5), e=nz(-9,9);
+  const over=(k,n)=>[sg(k),FR(N(Math.abs(k)),xp(n))];
+  return {key:`lr${a},${b},${c},${d},${e}`,
+    q:FR(S([[a,xp(2)],[b,X],[c,null]]),S([[d,xp(2)],[e,null]])), a:RV(Q(a,d)), to:Infinity,
+    steps:[{label:'分母の最高次 x² で分子分母を割る', e:FR(S([[a,null],over(b,1),over(c,2)]),S([[d,null],over(e,2)]))}]};
+});
+
+L(2,'t','1 − cos x の極限',()=>{
+  const a=ri(1,5), b=ri(1,3), A=mono(a), BX=C(b,xp(2));
+  return {key:`lc${a},${b}`, q:FR(S([[1,null],[-1,F('cos',A,true)]]),BX), a:RV(Q(a*a,2*b)), to:0,
+    steps:[{label:'分子分母に（1 + cos）をかける', e:FR(F('sin',A,true,2),P(BX,PAR(S([[1,null],[1,F('cos',A,true)]]))))}]};
+});
+L(2,'t','tan x / sin x の極限',()=>{
+  const [a,b]=distinct(1,5,1,5), A=mono(a), B=mono(b);
+  return {key:`lt${a},${b}`, q:FR(F('tan',A,true),F('sin',B,true)), a:RV(Q(a,b)), to:0,
+    steps:[{label:'tan θ / θ と θ / sin θ に分ける', e:P(FR(F('tan',A,true),A),DOT,FR(B,F('sin',B,true)),DOT,RV(Q(a,b)))}]};
+});
+L(2,'fr','√ の差の極限（x → ∞）',()=>{
+  const a=nz(-8,8), R=SQ(S([[1,xp(2)],[a,X]]));
+  return {key:`lq${a}`, q:S([[1,R],[-1,X]]), a:RV(Q(a,2)), to:Infinity,
+    steps:[{label:'分子を有理化', e:FR(C(a,X),S([[1,R],[1,X]]))}]};
+});
+L(2,'fr','因数分解して約分',()=>{
+  const n=ri(2,4), a=nz(-3,3), terms=[];
+  for(let k=0;k<n;k++) terms.push([Math.pow(a,k),xp(n-1-k)]);
+  return {key:`lp${n},${a}`, q:FR(S([[1,xp(n)],[-Math.pow(a,n),null]]),lin(1,-a)), a:N(n*Math.pow(a,n-1)), to:a,
+    steps:[{label:'分子を因数分解して約分', e:S(terms)}]};
+});
+L(2,'fr','無理式の極限（x → 0）',()=>{
+  const c=ri(1,4), a=ri(1,3), R=SQ(S([[a,X],[c*c,null]]));
+  // (√(ax+c²) − c)/x = a/(√(ax+c²)+c) → a/(2c)
+  return {key:`lr0${c},${a}`, q:FR(S([[1,R],[-c,null]]),X), a:RV(Q(a,2*c)), to:0,
+    steps:[{label:'分子を有理化', e:FR(N(a),S([[1,R],[c,null]]))}]};
+});
+L(2,'el','指数関数の差の極限',()=>{
+  const [a,b]=distinct(-4,4,-4,4);
+  const Ea=EXP(mono(a)), Eb=EXP(mono(b));
+  return {key:`ld${a},${b}`, q:FR(S([[1,Ea],[-1,Eb]]),X), a:N(a-b), to:0,
+    steps:[{label:'1 を引いて足し、2つに分ける', e:S([[1,FR(S([[1,Ea],[-1,null]]),X)],[-1,FR(S([[1,Eb],[-1,null]]),X)]])}]};
+});
+
+L(3,'el','e の定義（x → 0）',()=>{
+  let a,b; do{ a=nz(-3,3); b=ri(1,3); }while(a*b===1);
+  const B=linC(1,a), k=a*b;
+  const q=V(supm(par(B.m),frm(mn(b),XM)), x=>Math.pow(B.f(x),b/x));
+  const st=V(supm(brace(supm(par(B.m),frm(mn(1),mono(a).m))),intM(k)), x=>Math.pow(Math.pow(B.f(x),1/(a*x)),k));
+  return {key:`lE0${a},${b}`, q, a:EPOW(k), to:0, steps:[{label:'(1 + θ)^{1/θ} → e の形をつくる', e:st}]};
+});
+L(3,'el','e の定義（x → ∞）',()=>{
+  let a,b; do{ a=nz(-3,3); b=ri(1,3); }while(a*b===1);
+  const k=a*b;
+  const B=S([[1,null],[sg(a),FR(N(Math.abs(a)),X)]]), BX=mono(b);
+  const q=V(supm(par(B.m),BX.m), x=>Math.pow(B.f(x),b*x));
+  const ex = a===1 ? XM : a===-1 ? NEG+XM : (a<0?NEG:'')+frm(XM,mn(Math.abs(a)));
+  const st=V(supm(brace(supm(par(B.m),ex)),intM(k)), x=>Math.pow(Math.pow(B.f(x),x/a),k));
+  return {key:`lEi${a},${b}`, q, a:EPOW(k), to:Infinity, steps:[{label:'(1 + 1/t)^t → e の形をつくる', e:st}]};
+});
+L(3,'t','x sin(1/x) 型（x → ∞）',()=>{
+  const a=ri(2,6), AX=FR(N(a),X);
+  return {key:`lx${a}`, q:P(X,F('sin',AX,true)), a:N(a), to:Infinity,
+    steps:[{label:'θ = a / x → 0 とおく', e:C(a,FR(F('sin',AX,true),AX))}]};
+});
+L(3,'fr','√ の差の極限（x → ∞）',()=>{
+  const [a,b]=distinct(-6,6,-6,6);
+  const R1=SQ(S([[1,xp(2)],[a,X]])), R2=SQ(S([[1,xp(2)],[b,X]]));
+  return {key:`lq2${a},${b}`, q:S([[1,R1],[-1,R2]]), a:RV(Q(a-b,2)), to:Infinity,
+    steps:[{label:'分子を有理化', e:FR(C(a-b,X),S([[1,R1],[1,R2]]))}]};
+});
+
+// ----------------------------------------------------------------------
+// limits that come from the definition of the derivative (the variable is h)
+// ----------------------------------------------------------------------
+const HM='<mi>h</mi>', PIM='<mi>π</mi>';
+const HV=V(HM,h=>h);
+const HALF=RV(Q(1,2)), R2=V(frm(sqm(mn(2)),mn(2)),()=>Math.SQRT2/2), R3=V(frm(sqm(mn(3)),mn(2)),()=>Math.sqrt(3)/2);
+// each exact value as [positive expression, sign] so a subtraction never becomes "− −"
+const ANG=[{m:frm(PIM,mn(6)),       v:Math.PI/6,   sin:[HALF,1], cos:[R3,1]},
+           {m:frm(PIM,mn(4)),       v:Math.PI/4,   sin:[R2,1],   cos:[R2,1]},
+           {m:frm(PIM,mn(3)),       v:Math.PI/3,   sin:[R3,1],   cos:[HALF,1]},
+           {m:frm(mn(2)+PIM,mn(3)), v:2*Math.PI/3, sin:[R3,1],   cos:[HALF,-1]},
+           {m:frm(mn(3)+PIM,mn(4)), v:3*Math.PI/4, sin:[R2,1],   cos:[R2,-1]},
+           {m:frm(mn(5)+PIM,mn(6)), v:5*Math.PI/6, sin:[HALF,1], cos:[R3,-1]}];
+const jn=k=>String(k).replace('-','\u2212');   // a minus sign inside a Japanese label
+
+L(1,'df','微分の定義（多項式）',()=>{
+  const a=nz(-5,5), n=ri(2,3), U=S([[a,null],[1,HV]]), an=Math.pow(a,n);
+  return {key:`dp${a},${n}`, v:'h', to:0,
+    q:FR(S([[1,PW(U,n,true)],[-an,null]]),HV), a:N(n*Math.pow(a,n-1)),
+    steps:[{label:`f(x) = x${n===2?'²':'³'} の x = ${jn(a)} での微分係数`, as:'const',
+      e:P(N(n),DOT,n-1===1?factor(a):PW(N(a),n-1,a<0))}]};
+});
+L(1,'df','微分の定義（分数関数）',()=>{
+  const a=ri(2,9), U=S([[a,null],[1,HV]]);
+  return {key:`dq${a}`, v:'h', to:0,
+    q:FR(S([[1,FR(N(1),U)],[Q(-1,a),null]]),HV), a:RV(Q(-1,a*a)),
+    steps:[{label:'通分して h で約分', e:SF(-1,P(factor(a),PAR(U)))}]};
+});
+L(2,'df','微分の定義（無理関数）',()=>{
+  const r=ri(2,9), a=r*r, U=S([[a,null],[1,HV]]);
+  return {key:`ds${r}`, v:'h', to:0,
+    q:FR(S([[1,SQ(U)],[-r,null]]),HV), a:RV(Q(1,2*r)),
+    steps:[{label:'分子を有理化', e:FR(N(1),S([[1,SQ(U)],[r,null]]))}]};
+});
+L(2,'df','微分の定義（三角関数）',()=>{
+  const i=ri(0,ANG.length-1), f=pick(['sin','cos']), c=ANG[i];
+  const A=V(c.m,()=>c.v), ARG=S([[1,A],[1,HV]]);
+  const val = f==='sin' ? c.sin : c.cos;                       // f(c), as [expr, sign]
+  const d   = f==='sin' ? c.cos : [c.sin[0],-c.sin[1]];        // f′(c)
+  return {key:`dt${f}${i}`, v:'h', to:0,
+    q:FR(S([[1,F(f,ARG,false)],[-val[1],val[0]]]),HV), a: d[1]<0 ? NEGV(d[0]) : d[0],
+    steps:[{label:`f(x) = ${f} x の微分係数`, as:'const',
+      e: f==='sin' ? F('cos',A,false) : NEGV(F('sin',A,false))}]};
+});
+L(3,'df','微分の定義（対数・指数）',()=>{
+  if(Math.random()<0.5){
+    const a=ri(2,9), U=S([[a,null],[1,HV]]);
+    return {key:`dl${a}`, v:'h', to:0,
+      q:FR(S([[1,F('log',U,false)],[-1,F('log',N(a),true)]]),HV), a:RV(Q(1,a)),
+      steps:[{label:'log の差を1つにまとめる', e:FR(F('log',S([[1,null],[[1,a],HV]]),false),HV)}]};
+  }
+  const a=ri(1,4), EA=EPOW(a);
+  return {key:`dx${a}`, v:'h', to:0,
+    q:FR(S([[1,EXP(S([[a,null],[1,HV]]))],[-1,EA]]),HV), a:EA,
+    steps:[{label:'共通の因数をくくり出す', e:P(EA,DOT,FR(S([[1,EXP(HV)],[-1,null]]),HV))}]};
+});
+L(3,'df','微分の定義（係数つき）',()=>{
+  const a=nz(-5,5), n=ri(2,3), k=ri(2,4), U=S([[a,null],[k,HV]]), an=Math.pow(a,n);
+  return {key:`dk${a},${n},${k}`, v:'h', to:0,
+    q:FR(S([[1,PW(U,n,true)],[-an,null]]),HV), a:N(k*n*Math.pow(a,n-1)),
+    steps:[{label:`${k}h = t とおくと ${k} f′(${jn(a)})`, as:'const',
+      e:P(N(k),DOT,factor(n*Math.pow(a,n-1)))}]};
+});
+
+// ======================================================================
+// sequences  (数列の極限) — the variable is n, and a series term uses k
+// ======================================================================
+const NMi='<mi>n</mi>', KMi='<mi>k</mi>', INF='<mi>∞</mi>';
+const AM='<mi>a</mi>', SM='<mi>S</mi>';
+const subm=(b,s)=>'<msub><mrow>'+b+'</mrow><mrow>'+s+'</mrow></msub>';
+const NV=V(NMi,n=>n), KV=V(KMi,k=>k);
+function np(j){ return j===0 ? ONE : j===1 ? NV : V(supm(NMi,mn(j)),n=>Math.pow(n,j)); }
+const monoN=a=>S([[a,NV]]);
+const fac=e=>e.sum?PAR(e):e;                       // k(k+1), not k((k+1))
+const qf=(p,q)=>q===1?N(p):FR(N(p),N(q));          // never "a over 1"
+// (p/q) raised to an exponent written as expM (value expF(v))
+function pw(p,q,expM,expF){
+  const bm = q===1 ? (p<0?par(NEG+mn(-p)):mn(p)) : par((p<0?NEG:'')+frm(mn(Math.abs(p)),mn(q)));
+  return V(supm(bm,expM), v=>Math.pow(p/q,expF(v)));
+}
+const KM1=S([[1,KV],[-1,null]]).m;                 // k − 1
+const SIG=t=>'<munderover><mo movablelimits="false">∑</mo><mrow>'+KMi+'<mo>=</mo>'+mn(1)+'</mrow><mrow>'+INF+'</mrow></munderover>'+THIN+t;
+// both bars in one mrow, so they stretch to the same height
+const ABS=s=>'<mrow><mo stretchy="true" fence="true" lspace="0em" rspace="0em">|</mo><mrow>'+s+'</mrow><mo stretchy="true" fence="true" lspace="0em" rspace="0em">|</mo></mrow>';
+function Sq(level,name,fn){ T.push({kind:'s',level,name,fn}); }
+
+Sq(1,'数列の極限（分数式）',()=>{
+  const a=nz(-5,5), b=nz(-6,6), c=nz(-9,9), d=ri(1,5), e=nz(-9,9);
+  const over=(k,j)=>[sg(k),FR(N(Math.abs(k)),np(j))];
+  return {key:`sr${a},${b},${c},${d},${e}`, mode:'lim',
+    q:FR(S([[a,np(2)],[b,NV],[c,null]]),S([[d,np(2)],[e,null]])), a:RV(Q(a,d)),
+    steps:[{label:'分母の最高次 n² で分子分母を割る', e:FR(S([[a,null],over(b,1),over(c,2)]),S([[d,null],over(e,2)]))}],
+    ns:[5,12,30], nlim:[1e5,3e5]};
+});
+Sq(1,'√ を含む数列の極限',()=>{
+  const a=nz(-8,8), R=SQ(S([[1,np(2)],[a,NV]])), m=Math.abs(a);
+  return {key:`ss${a}`, mode:'lim', q:S([[1,R],[-1,NV]]), a:RV(Q(a,2)),
+    steps:[{label:'分子を有理化', e:FR(C(a,NV),S([[1,R],[1,NV]]))}],
+    ns:[m+3,m+12,m+40], nlim:[1e5,3e5]};
+});
+Sq(1,'無限等比級数の和',()=>{
+  const A=ri(1,9); let p,q; do{ q=ri(2,6); p=nz(-(q-1),q-1); }while(gcd(Math.abs(p),q)!==1);
+  const R=pw(p,q,KM1,k=>k-1), TERM = A===1 ? R : P(N(A),R);
+  return {key:`sg${A},${p},${q}`, mode:'series', q:V(SIG(TERM.m), ()=>A*q/(q-p)),
+    a:RV(Q(A*q,q-p)), term:k=>A*Math.pow(p/q,k-1),
+    steps:[{label:'初項と公比から 初項 /（1 − 公比）', as:'const',
+      e:FR(N(A),S([[1,null],[[-p,q],null]]))}]};
+});
+
+Sq(2,'等比数列を含む分数式',()=>{
+  const [p,q]=pick([[3,2],[4,3],[5,2],[5,3],[5,4],[6,5],[7,2]]);
+  const A=ri(1,4), C=ri(1,4), B=nz(-4,4), D=ri(1,4);
+  const PN=pw(p,1,NMi,n=>n), QN=pw(q,1,NMi,n=>n), RN=pw(q,p,NMi,n=>n);
+  const cp=(c,e)=>Math.abs(c)===1?[c,e]:[sg(c),P(N(Math.abs(c)),DOT,e)];   // 3·3ⁿ, never "33ⁿ"
+  return {key:`sb${p},${q},${A},${B},${C},${D}`, mode:'lim',
+    q:FR(S([cp(A,PN),cp(B,QN)]),S([cp(C,PN),cp(D,QN)])), a:RV(Q(A,C)),
+    steps:[{label:`分子分母を ${p}ⁿ で割る`, e:FR(S([[A,null],[B,RN]]),S([[C,null],[D,RN]]))}],
+    ns:[3,6,10], nlim:[Math.floor(150/Math.log10(p)),Math.floor(280/Math.log10(p))]};   // keep pⁿ inside double range
+});
+Sq(2,'はさみうちの原理',()=>{
+  const f=pick(['sin','cos']), a=ri(1,5), b=ri(1,4);
+  const num=F(f,monoN(b),true), den=monoN(a), Qx=FR(num,den), bound=FR(N(1),den);
+  return {key:`sh${f}${a},${b}`, mode:'lim', q:Qx, a:N(0),
+    steps:[{label:'|'+f+'| ≤ 1 ではさむ', m:ABS(Qx.m)+'<mo>≤</mo>'+bound.m, bound}],
+    ns:[2,5,11], nlim:[1e5,3e5]};
+});
+Sq(2,'無限級数（部分分数に分解）',()=>{
+  const [p,q]=pick([[1,0],[1,1],[2,-1],[2,1],[3,-2],[3,1],[1,2],[2,3]]), c=ri(1,3);
+  const A=S([[p,KV],[q,null]]), B=S([[p,KV],[q+p,null]]);
+  const Sn=S([[Q(c,p),PAR(S([[1,qf(1,p+q)],[-1,FR(N(1),S([[p,NV],[p+q,null]]))]]))]]);
+  return {key:`sp${p},${q},${c}`, mode:'series',
+    q:V(SIG(SF(c,P(fac(A),fac(B))).m), ()=>c/(p*(p+q))), a:RV(Q(c,p*(p+q))),
+    term:k=>c/((p*k+q)*(p*k+q+p)),
+    steps:[{label:'部分分数に分解して第 n 項までの和', as:'partial', lead:subm(SM,NMi)+'<mo>=</mo>',
+      e:Sn, f:n=>(c/p)*(1/(p+q)-1/(p*n+q+p))}]};
+});
+
+Sq(3,'漸化式で定まる数列の極限',()=>{
+  let p,pq,q0,a1,al,df;
+  do{
+    [p,pq]=pick([[1,2],[1,3],[2,3],[1,4],[3,4],[-1,2],[-1,3],[-2,3]]);
+    q0=nz(-6,6); a1=nz(-6,6);
+    al=Q(q0*pq,pq-p); df=Q(a1*(pq-p)-q0*pq,pq-p);
+  }while(df[0]===0);
+  const amn=subm(AM,NMi), amn1=subm(AM,S([[1,NV],[1,null]]).m);
+  const rhs=S([[[p,pq],V(amn,()=>0)],[q0,null]]);
+  const POW=pw(p,pq,S([[1,NV],[-1,null]]).m,n=>n-1);
+  return {key:`sc${p},${pq},${q0},${a1}`, mode:'rec', rec:{a1,r:p/pq,q:q0},
+    q:V(subm(AM,mn(1))+'<mo>=</mo>'+intM(a1)+'<mo lspace="0em" rspace="0.8em">,</mo>'+amn1+'<mo>=</mo>'+rhs.m, ()=>0),
+    a:RV(al), amLead:amn,
+    steps:[{label:'特性方程式の解 α を使って一般項', lead:amn+'<mo>=</mo>', as:'closed',
+      e:S([[al,null],[df,POW]]), f:n=>al[0]/al[1]+(df[0]/df[1])*Math.pow(p/pq,n-1)}]};
+});
+Sq(3,'√ の差の極限（数列）',()=>{
+  const [a,b]=distinct(-6,6,-6,6), m=Math.max(Math.abs(a),Math.abs(b));
+  const R1=SQ(S([[1,np(2)],[a,NV]])), R2=SQ(S([[1,np(2)],[b,NV]]));
+  return {key:`sd${a},${b}`, mode:'lim', q:S([[1,R1],[-1,R2]]), a:RV(Q(a-b,2)),
+    steps:[{label:'分子を有理化', e:FR(C(a-b,NV),S([[1,R1],[1,R2]]))}],
+    ns:[m+3,m+12,m+40], nlim:[1e5,3e5]};
+});
+Sq(3,'無限級数（2つの等比級数に分ける）',()=>{
+  const c=ri(5,7); let a,b; do{ a=ri(2,c-2); b=ri(2,c-2); }while(a===b);
+  const AK=pw(a,1,KMi,k=>k), BK=pw(b,1,KMi,k=>k), CK=pw(c,1,KMi,k=>k);
+  const v=a/(c-a)+b/(c-b);
+  return {key:`s2${a},${b},${c}`, mode:'series',
+    q:V(SIG(FR(S([[1,AK],[1,BK]]),CK).m), ()=>v), a:RV(Q(a*(c-b)+b*(c-a),(c-a)*(c-b))),
+    term:k=>(Math.pow(a,k)+Math.pow(b,k))/Math.pow(c,k),
+    steps:[{label:'2つの無限等比級数に分ける', as:'const',
+      e:S([[1,RV(Q(a,c-a))],[1,RV(Q(b,c-b))]])}]};
+});
+
+// ======================================================================
+// public API
+// ======================================================================
+const LIM=(to,v)=>{
+  const t = to===Infinity ? '<mi>∞</mi>' : intM(to);
+  return '<munder><mi>lim</mi><mrow><mi>'+(v||'x')+'</mi><mo>→</mo>'+t+'</mrow></munder>'+THIN;   // keep "x→0" from running into the next coefficient
+};
+const LIMN='<munder><mi>lim</mi><mrow>'+NMi+'<mo>→</mo>'+INF+'</mrow></munder>'+THIN;
+const LEVELS={1:'基本',2:'標準',3:'応用'};
+const KINDS={d:'導関数', l:'関数の極限', s:'数列の極限'};
+const SUBS={t:'三角関数', el:'指数・対数', df:'微分の定義', fr:'分数・無理式'};
+// which subtypes a field offers, and which of them have problems at a given level
+const subsOf=(field,level)=>{
+  const out=[];
+  T.forEach(t=>{ if(t.kind===field && t.sub && out.indexOf(t.sub)<0 && (!level||t.level===level)) out.push(t.sub); });
+  return out;
+};
+const under=e=>e.sum ? par(e.m) : e.m;   // lim(x²+x+1), not lim x²+x+1
+let lastName='';
+function generate(opt, recent){
+  opt=opt||{}; recent=recent||[];
+  const inField=t=>opt.field==='mix'||!opt.field||t.kind===opt.field;
+  let pool=T.filter(t=>inField(t) && (!opt.level||t.level===opt.level)
+    && (!opt.sub || opt.field==='mix' || t.sub===opt.sub));
+  if(!pool.length) pool=T.filter(t=>inField(t) && (!opt.sub||t.sub===opt.sub));   // never leave the pool empty
+  if(!pool.length) pool=T.filter(inField);
+  let tries=0, t, p;
+  do{
+    const cand = pool.filter(x=>x.name!==lastName);
+    t=pick(cand.length?cand:pool); p=t.fn(); tries++;
+  }while(recent.indexOf(t.kind+t.level+p.key)>=0 && tries<20);
+  lastName=t.name;
+  return decorate(t,p);
+}
+function decorate(t,p){
+  const d = t.kind==='d', s = t.kind==='s';
+  const Y='<mi>y</mi>', YP='<mi>y</mi><mo>′</mo>';
+  const common={key:t.kind+t.level+p.key, kind:t.kind, level:t.level, levelName:LEVELS[t.level],
+    kindName:KINDS[t.kind], sub:t.sub, subName:SUBS[t.sub], name:t.name, raw:p};
+  if(d) return Object.assign(common,{
+    prompt:'次の関数を微分せよ。',
+    qm: Y+'<mo>=</mo>'+p.q.m,
+    am: YP+'<mo>=</mo>'+p.a.m,
+    steps: p.steps.map(x=>({label:x.label, m:YP+'<mo>=</mo>'+x.e.m}))});
+  if(!s) return Object.assign(common,{
+    prompt:'次の極限値を求めよ。',
+    qm: LIM(p.to,p.v)+under(p.q),
+    am: '<mo>=</mo>'+p.a.m,
+    steps: p.steps.map(x=>({label:x.label,
+      m:'<mo>=</mo>'+(x.as==='const'?'':LIM(p.to,p.v))+under(x.e)}))});
+  // sequences: a limit chain, a series, or a recurrence
+  const head = p.mode==='lim' ? LIMN : '';
+  return Object.assign(common,{
+    prompt: p.mode==='series' ? '次の無限級数の和を求めよ。'
+          : p.mode==='rec' ? '次の条件で定まる数列の極限を求めよ。' : '次の極限値を求めよ。',
+    qm: head+(p.mode==='lim'?under(p.q):p.q.m),
+    am: (p.amLead ? LIMN+p.amLead : '')+'<mo>=</mo>'+p.a.m,
+    steps: p.steps.map(x=>({label:x.label,
+      m: x.m !== undefined ? x.m
+       : x.lead !== undefined ? x.lead+x.e.m
+       : '<mo>=</mo>'+head+(p.mode==='lim'?under(x.e):x.e.m)}))});
+}
+const count=o=>T.filter(t=>(!o.field||o.field==='mix'||t.kind===o.field)
+  && (!o.level||t.level===o.level) && (!o.sub||t.sub===o.sub)).length;
+const API={generate, templates:T, decorate, LEVELS, KINDS, SUBS, subsOf, count};
+if(typeof module!=='undefined' && module.exports) module.exports=API; else root.DRILL=API;
+})(this);
+
+</script>
+<script>
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const KEY='m3drill-v1';
+  const REVIEW_GAP=3;   // a missed problem comes back after this many others
+
+  // ---------- persistence (per-device; a blocked store just means nothing is remembered) ----------
+  function today(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+  function load(){
+    let s={};
+    try{ s=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
+    if(s.day!==today()){ s.day=today(); s.n=0; s.ok=0; s.ng=0; }
+    s.field=s.field||'d'; s.level=(s.level===undefined?1:s.level); s.sub=s.sub||'';
+    s.queue=s.queue||[]; s.done=s.done||0;
+    return s;
+  }
+  const st=load();
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(st)); }catch(e){} }
+
+  // ---------- settings ----------
+  function choose(key,v){
+    st[key]=v;
+    if(key==='field') st.sub='';           // the subtypes belong to the field
+    save(); paintSettings();
+    if(!revealed && !cur.review) next(true);   // unanswered problem: swap it for one from the new range
+    else $('hint').textContent='次の問題から切り替わります';
+  }
+  function segInit(id,key,cast){
+    $(id).querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>choose(key,cast(b.dataset.v))));
+  }
+  segInit('seg-field','field',v=>v);
+  segInit('seg-level','level',v=>+v);
+
+  // 種類 (subtypes of the current field) — built from the templates, so it stays in step with them
+  let subRowFor=null;
+  function paintSettings(){
+    if(!DRILL.count({field:st.field, sub:st.sub, level:st.level})) st.level=0;   // never leave an empty selection
+    const subs=DRILL.subsOf(st.field);
+    const row=$('row-sub'), seg=$('seg-sub');
+    row.hidden = !subs.length;
+    if(subs.length){
+      if(subRowFor!==st.field){        // rebuild only when the field changes, so a tap never lands on a replaced button
+        seg.innerHTML=[''].concat(subs).map(v=>'<button data-v="'+v+'">'+(v?DRILL.SUBS[v]:'すべて')+'</button>').join('');
+        seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>choose('sub',b.dataset.v)));
+        subRowFor=st.field;
+      }
+      seg.querySelectorAll('button').forEach(b=>{
+        b.classList.toggle('sel', b.dataset.v===st.sub);
+        b.disabled = DRILL.count({field:st.field, sub:b.dataset.v, level:st.level})===0;
+      });
+    }else{
+      if(subRowFor!==null){ seg.innerHTML=''; subRowFor=null; }   // leave nothing behind in the hidden row
+      if(st.sub){ st.sub=''; save(); }
+    }
+    $('seg-field').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',b.dataset.v===st.field));
+    $('seg-level').querySelectorAll('button').forEach(b=>{
+      const v=+b.dataset.v;
+      b.classList.toggle('sel',v===st.level);
+      b.disabled = DRILL.count({field:st.field, sub:st.sub, level:v})===0;
+    });
+  }
+
+  // ---------- flow ----------
+  const recent=[];
+  let cur=null, revealed=false, shown=0;
+  const strip=p=>({key:p.key,kind:p.kind,kindName:p.kindName,subName:p.subName,level:p.level,levelName:p.levelName,name:p.name,prompt:p.prompt,qm:p.qm,am:p.am,steps:p.steps});
+  const math=m=>'<math display="block">'+m+'</math>';
+
+  function next(replace){
+    let p=null, review=false;
+    const i=st.queue.findIndex(q=>q.due<=st.done);
+    if(i>=0 && !replace){ p=st.queue.splice(i,1)[0].p; review=true; save(); }
+    else{
+      const g=DRILL.generate({field:st.field, level:st.level, sub:st.sub}, recent);
+      p=strip(g); recent.push(p.key); if(recent.length>40) recent.shift();
+    }
+    if(!replace) shown++;
+    cur={p, review};
+    revealed=false;
+    render();
+  }
+  function render(){
+    const p=cur.p;
+    $('q-num').textContent='#'+shown;
+    $('q-tag').textContent=(p.kindName||'')+(p.subName?'（'+p.subName+'）':'')+' ・ '+p.levelName;
+    $('q-rev').hidden=!cur.review;
+    $('q-prompt').textContent=p.prompt;
+    $('q-math').innerHTML=math(p.qm);
+    $('a-method').textContent=p.name;
+    $('a-steps').innerHTML=p.steps.map(s=>'<div class="step-label">'+s.label+'</div><div class="mbox step">'+math(s.m)+'</div>').join('');
+    $('a-final').innerHTML=math(p.am);
+    $('ans').hidden=!revealed;
+    fitAll();
+    $('btn-show').hidden=revealed;
+    $('judge').hidden=!revealed;
+    $('hint').textContent= revealed ? 'ノートの途中式と見比べて、自分で判定' : '解けたら「答えを見る」';
+    const n=st.queue.length;
+    paintSettings();
+    $('st-n').textContent=st.n; $('st-ok').textContent=st.ok; $('st-ng').textContent=st.ng;
+    $('st-rev').textContent= n ? '復習待ち '+n : '';
+  }
+  // a long expression shrinks (down to 75%) before it needs sideways scrolling
+  function fit(box){
+    box.style.fontSize='';
+    const base=parseFloat(getComputedStyle(box).fontSize);
+    for(let k=0.95;k>=0.75 && box.scrollWidth>box.clientWidth+1;k-=0.05) box.style.fontSize=(base*k)+'px';
+  }
+  function fitAll(){ document.querySelectorAll('.qcard .mbox').forEach(b=>{ if(b.offsetParent) fit(b); }); }
+  window.addEventListener('resize',fitAll);
+  let lock=0;
+  const guard=()=>{ const t=Date.now(); if(t-lock<350) return false; lock=t; return true; };   // no double-tap grading
+  $('btn-show').addEventListener('click',()=>{
+    if(!guard()) return;
+    revealed=true; render();
+    $('ans').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+  function grade(ok){
+    if(!guard()) return;
+    st.n++; st.done++;
+    if(ok) st.ok++; else { st.ng++; st.queue.push({p:cur.p, due:st.done+REVIEW_GAP}); }
+    save();
+    next(false);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  $('btn-ok').addEventListener('click',()=>grade(true));
+  $('btn-ng').addEventListener('click',()=>grade(false));
+
+  next(false);
+})();
+</script>
+</body>
+</html>
