@@ -239,6 +239,7 @@ function tidy(terms){
 const inner=t=>t.n>1?PAR(t.e):t.e;
 const signed=(k,e)=>k<0?NEGV(e):e;
 const factor=k=>k<0?PAR(N(k)):N(k);     // a number after "·"
+const dotf=e=>e.m.indexOf(NEG)===0?PAR(e):e;   // an expression after "·" 
 
 // ======================================================================
 // derivatives  (level 1 基本 / 2 標準 / 3 応用)
@@ -385,6 +386,60 @@ D(3,'prod','積の微分（無理関数）',()=>{
     steps:[{label:PROD, e:S([[1,R],[-1,P(X,DOT,FR(X,R))]])}], dom:[-w,w]};
 });
 
+D(1,'quot','商の微分（x / 1次式）',()=>{
+  const a=nz(-6,6), U=lin(1,a);
+  return {key:`qb${a}`, q:FR(X,U), a:SF(a,PW(U,2,true)),
+    steps:[{label:QUOT, e:FR(S([[1,PAR(U)],[-1,X]]),PW(U,2,true))}], dom:away(1,a)};
+});
+D(2,'comp','合成関数（三角関数の中が2次式）',()=>{
+  const f=pick(['sin','cos']), a=nz(-3,3), b=nz(-5,5), U=S([[a,xp(2)],[b,null]]);
+  const g=f==='sin'?'cos':'sin', k=f==='sin'?2*a:-2*a;
+  return {key:`t2${f}${a},${b}`, q:F(f,U,false), a:C(k,P(X,F(g,U,false))),
+    steps:[{label:OUTER, e:P(f==='sin'?F('cos',U,false):NEGV(F('sin',U,false)),DOT,dotf(C(2*a,X)))}], dom:[-1.6,1.6]};
+});
+D(2,'comp','合成関数（指数の中が三角関数）',()=>{
+  const f=pick(['sin','cos']), a=ri(1,3), A=mono(a), U=F(f,A,true), E=EXP(U);
+  const g=f==='sin'?'cos':'sin', k=f==='sin'?a:-a;
+  return {key:`es${f}${a}`, q:E, a:C(k,P(E,F(g,A,true))),
+    steps:[{label:OUTER, e:P(E,DOT,dotf(C(k,F(g,A,true))))}], dom:[-2,2]};
+});
+D(3,'comp','合成関数（対数関数のn乗）',()=>{
+  const n=ri(2,4), c=ri(1,3), LG=F('log',mono(c),true);
+  return {key:`lp${n},${c}`, q:PW(LG,n,true), a:FR(C(n,n-1===1?LG:PW(LG,n-1,true)),X),
+    steps:[{label:OUTER, e:P(C(n,n-1===1?LG:PW(LG,n-1,true)),DOT,FR(N(1),X))}], dom:[0.4,4]};
+});
+D(2,'prod','積の微分（多項式 × 三角関数）',()=>{
+  const n=ri(1,2), a=ri(1,3), A=mono(a), f=pick(['sin','cos']);
+  const SN=F(f,A,true), CS=F(f==='sin'?'cos':'sin',A,true), k=f==='sin'?a:-a;
+  return {key:`xt${n},${a}${f}`, q:P(xp(n),SN),
+    a: n===1 ? S([[1,SN],[k,P(X,CS)]]) : P(X,PAR(S([[n,SN],[k,P(X,CS)]]))),
+    steps:[{label:PROD, e:S([[n,P(xp(n-1),SN)],[k,P(xp(n),CS)]])}], dom:[-2,2]};
+});
+D(3,'prod','積の微分（無理関数 × 対数関数）',()=>{
+  const c=ri(1,3), LG=F('log',mono(c),true), R=SQ(X);
+  return {key:`sl${c}`, q:P(R,LG), a:FR(S([[1,LG],[2,null]]),P(N(2),R)),
+    steps:[{label:PROD, e:S([[1,P(FR(N(1),P(N(2),R)),LG)],[1,P(R,DOT,FR(N(1),X))]])}], dom:[0.4,4]};
+});
+D(2,'quot','商の微分（1次式 / 2次式）',()=>{
+  const a=nz(-4,4), b=nz(-6,6), c=ri(1,9), U=S([[1,xp(2)],[c,null]]);
+  const t=tidy([[-a,xp(2)],[-2*b,X],[a*c,null]]);
+  return {key:`lq2${a},${b},${c}`, q:FR(lin(a,b),U), a:signed(t.k,FR(C(Math.abs(t.k),inner(t)),PW(U,2,true))),
+    steps:[{label:QUOT, e:FR(S([[a,PAR(U)],[-1,P(PAR(lin(a,b)),DOT,C(2,X))]]),PW(U,2,true))}], dom:[-3,3]};
+});
+D(2,'quot','商の微分（三角関数 / 多項式）',()=>{
+  const n=ri(1,2), a=ri(1,3), A=mono(a), f=pick(['sin','cos']);
+  const SN=F(f,A,true), CS=F(f==='sin'?'cos':'sin',A,true), k=f==='sin'?a:-a;
+  return {key:`ts2${n},${a}${f}`, q:FR(SN,xp(n)),
+    a:FR(S([[k,P(X,CS)],[-n,SN]]),xp(n+1)),
+    steps:[{label:QUOT, e:FR(S([[k,P(CS,DOT,xp(n))],[-n,P(SN,DOT,n>1?xp(n-1):N(1))]]),xp(2*n))}],
+    dom:[0.4,3]};
+});
+D(3,'quot','商の微分（√ を含む）',()=>{
+  const c=ri(1,9), U=S([[1,xp(2)],[c,null]]), R=SQ(U);
+  return {key:`xr${c}`, q:FR(X,R), a:FR(N(c),P(PAR(U),R)),
+    steps:[{label:QUOT, e:FR(S([[1,R],[-1,P(X,DOT,FR(X,R))]]),PAR(U))}], dom:[-3,3]};
+});
+
 // ======================================================================
 // limits
 // ======================================================================
@@ -406,12 +461,18 @@ L(1,'el','log(1 + x) / x → 1',()=>{
   return {key:`ll${a},${b}`, q:FR(U,mono(b)), a:RV(Q(a,b)), to:0,
     steps:[{label:'log(1 + θ) / θ の形をつくる', e:RAT(Q(a,b),FR(U,mono(a)))}]};
 });
-L(1,'fr','分数関数の極限（x → ∞）',()=>{
-  const a=nz(-5,5), b=nz(-6,6), c=nz(-9,9), d=ri(1,5), e=nz(-9,9);
-  const over=(k,n)=>[sg(k),FR(N(Math.abs(k)),xp(n))];
-  return {key:`lr${a},${b},${c},${d},${e}`,
-    q:FR(S([[a,xp(2)],[b,X],[c,null]]),S([[d,xp(2)],[e,null]])), a:RV(Q(a,d)), to:Infinity,
-    steps:[{label:'分母の最高次 x² で分子分母を割る', e:FR(S([[a,null],over(b,1),over(c,2)]),S([[d,null],over(e,2)]))}]};
+L(1,'fr','有理式の極限（x → ∞）',()=>{
+  // the degrees differ, so the answer is 0, a finite value or ±∞ depending on which side wins
+  let p,q,a,b,d,e;
+  do{
+    p=ri(1,3); q=ri(1,3); a=nz(-5,5); b=nz(-6,6); d=ri(1,5); e=nz(-9,9);
+  }while([8,15,40].some(x=>Math.abs(d*Math.pow(x,q)+e)<1e-9));
+  const t=(c,k)=> k>0 ? [c,xp(k)] : k===0 ? [c,null] : [sg(c),FR(N(Math.abs(c)),xp(-k))];
+  const ans = p<q ? N(0) : p===q ? RV(Q(a,d)) : INFV(sg(a)*sg(d));
+  return {key:`lr${p},${q},${a},${b},${d},${e}`, to:Infinity,
+    q:FR(S([[a,xp(p)],[b,xp(p-1)]]),S([[d,xp(q)],[e,null]])), a:ans,
+    steps:[{label:`分母の最高次 x${['','','²','³'][q]} で分子分母を割る`,
+      e:FR(S([t(a,p-q),t(b,p-1-q)]),S([t(d,0),t(e,-q)]))}]};
 });
 
 L(2,'t','1 − cos x の極限',()=>{
@@ -474,6 +535,88 @@ L(3,'fr','√ の差の極限（x → ∞）',()=>{
   const R1=SQ(S([[1,xp(2)],[a,X]])), R2=SQ(S([[1,xp(2)],[b,X]]));
   return {key:`lq2${a},${b}`, q:S([[1,R1],[-1,R2]]), a:RV(Q(a-b,2)), to:Infinity,
     steps:[{label:'分子を有理化', e:FR(C(a-b,X),S([[1,R1],[1,R2]]))}]};
+});
+
+L(2,'fr','√ と1次式の商（くくり出し）',()=>{
+  const k=ri(2,4), b=nz(-9,9), c=ri(1,9), to=pick([Infinity,-Infinity]);
+  let d,e;
+  do{ d=nz(-5,5); e=nz(-9,9); }while([8,15,40,-8,-15,-40].some(x=>Math.abs(d*x+e)<1e-9));   // no pole on a probe
+  const RAD=S([[k*k,xp(2)],[b,X],[c,null]]), DEN=S([[d,X],[e,null]]);
+  const inner2=SQ(S([[k*k,null],overx(b,1),overx(c,2)]));
+  const div=FR(inner2,S([[d,null],overx(e,1)]));
+  return {key:`rk${k},${b},${c},${d},${e},${to>0?'p':'m'}`, to,
+    q:FR(SQ(RAD),DEN), a:RV(Q(to===Infinity?k:-k,d)),
+    steps:[{label:`√ の中から x² を出す（x → ${dirName(to)} だから √x² = ${to===Infinity?'x':'−x'}）`,
+      e: to===Infinity ? div : NEGV(div)}]};
+});
+L(2,'fr','√ を含む分数式（因数分解して約分）',()=>{
+  const m=ri(2,5), a=m*m, up=Math.random()<0.5;
+  const R=SQ(X), DIF=S([[1,R],[-m,null]]), SUM=S([[1,R],[m,null]]), LIN=S([[1,X],[-a,null]]);
+  return up
+    ? {key:`fs${m}u`, to:a, q:FR(LIN,DIF), a:N(2*m),
+       steps:[{label:'x − a = (√x − √a)(√x + √a) と見て約分', e:SUM}]}
+    : {key:`fs${m}d`, to:a, q:FR(DIF,LIN), a:RV(Q(1,2*m)),
+       steps:[{label:'x − a = (√x − √a)(√x + √a) と見て約分', e:FR(N(1),SUM)}]};
+});
+L(3,'fr','√ の中に √ がある極限（x → ∞）',()=>{
+  const a=ri(1,6), R=SQ(X), IN=SQ(S([[1,X],[a,R]]));
+  return {key:`ss${a}`, to:Infinity, q:S([[1,IN],[-1,R]]), a:RV(Q(a,2)),
+    near:[1e8,1e10],                                  // this one approaches its limit like 1/√x
+    steps:[{label:'分子を有理化して √x でくくる', e:FR(C(a,R),S([[1,IN],[1,R]]))}]};
+});
+L(2,'t','x² sin(a/x)（x → 0）',()=>{
+  const a=ri(1,6), k=2, B=xp(k), Qx=P(B,F('sin',FR(N(a),X),true));
+  return {key:`zs${a}`, to:0, q:Qx, a:N(0),
+    steps:[{label:'|sin| ≦ 1 ではさむ', m:ABS(Qx.m)+'<mo>≦</mo>'+B.m, bound:B}]};
+});
+L(1,'t','(1 − cos x) / x（x → 0）',()=>{
+  const a=ri(1,5), A=mono(a);
+  return {key:`c1${a}`, to:0, q:FR(S([[1,null],[-1,F('cos',A,true)]]),X), a:N(0),
+    steps:[{label:'分子分母に（1 + cos）をかける',
+      e:FR(F('sin',A,true,2),P(X,PAR(S([[1,null],[1,F('cos',A,true)]]))))}]};
+});
+
+L(2,'t','x → π の三角の極限',()=>{
+  const a=ri(1,3), PI=V(PIM,()=>Math.PI), sgn=Math.pow(-1,a);
+  const XP=S([[1,X],[-1,PI]]);                       // x − π
+  const SH=F('sin',S([[a,X],[-a,PI]]),false);        // sin(ax − aπ) = (−1)ᵃ sin ax
+  return {key:`tp${a}`, to:Math.PI, toM:PIM, q:FR(F('sin',mono(a),true),XP), a:N(a*sgn),
+    steps:[{label:'x − π = t とおく（sin(ax − aπ) を使う）', e:sgn>0?FR(SH,XP):NEGV(FR(SH,XP))}]};
+});
+L(2,'t','1 − cos の比',()=>{
+  const [a,b]=distinct(1,5,1,5), A=mono(a), B=mono(b);
+  const cA=F('cos',A,true), cB=F('cos',B,true);
+  return {key:`cc${a},${b}`, to:0,
+    q:FR(S([[1,null],[-1,cA]]),S([[1,null],[-1,cB]])), a:RV(Q(a*a,b*b)),
+    steps:[{label:'分子分母それぞれに（1 + cos）をかける',
+      e:FR(P(F('sin',A,true,2),DOT,PAR(S([[1,null],[1,cB]]))),
+           P(F('sin',B,true,2),DOT,PAR(S([[1,null],[1,cA]]))))}]};
+});
+L(2,'t','sin の差の極限',()=>{
+  const [a,b]=distinct(1,6,1,6), A=mono(a), B=mono(b);
+  return {key:`sd${a},${b}`, to:0,
+    q:FR(S([[1,F('sin',A,true)],[-1,F('sin',B,true)]]),X), a:N(a-b),
+    steps:[{label:'2つに分けて sin θ / θ の形に',
+      e:S([[a,FR(F('sin',A,true),A)],[-b,FR(F('sin',B,true),B)]])}]};
+});
+L(2,'el','(aˣ − 1) / x',()=>{
+  const a=ri(2,7), LA=F('log',N(a),true), AX=V(supm(mn(a),XM),x=>Math.pow(a,x));
+  return {key:`ax${a}`, to:0, q:FR(S([[1,AX],[-1,null]]),X), a:LA,
+    steps:[{label:`${a}ˣ = e^(x log ${a}) と直す`,
+      e:FR(S([[1,EXP(P(X,DOT,LA))],[-1,null]]),X)}]};
+});
+L(3,'el','log の差の極限（x → ∞）',()=>{
+  const a=nz(-6,6);
+  return {key:`ld${a}`, to:Infinity,
+    q:P(X,PAR(S([[1,F('log',S([[1,X],[a,null]]),false)],[-1,F('log',X,true)]]))), a:N(a),
+    steps:[{label:'log の差を1つの log にまとめる',
+      e:P(X,F('log',S([[1,null],[sg(a),FR(N(Math.abs(a)),X)]]),false))}]};
+});
+L(2,'el','log と sin の組み合わせ',()=>{
+  const a=nz(-5,5), b=ri(1,5), LG=F('log',linC(1,a),false), SB=F('sin',mono(b),true);
+  return {key:`ls2${a},${b}`, to:0, q:FR(LG,SB), a:RV(Q(a,b)),
+    steps:[{label:'log(1 + θ)/θ と θ/sin θ に分ける',
+      e:RAT(Q(a,b),P(FR(LG,mono(a)),DOT,FR(mono(b),SB)))}]};
 });
 
 // ----------------------------------------------------------------------
@@ -609,11 +752,16 @@ const ABS=s=>'<mrow><mo stretchy="true" fence="true" lspace="0em" rspace="0em">|
 function Sq(level,sub,name,fn){ T.push({kind:'s',level,sub,name,fn}); }
 
 Sq(1,'sq','数列の極限（分数式）',()=>{
-  const a=nz(-5,5), b=nz(-6,6), c=nz(-9,9), d=ri(1,5), e=nz(-9,9);
-  const over=(k,j)=>[sg(k),FR(N(Math.abs(k)),np(j))];
-  return {key:`sr${a},${b},${c},${d},${e}`, mode:'lim',
-    q:FR(S([[a,np(2)],[b,NV],[c,null]]),S([[d,np(2)],[e,null]])), a:RV(Q(a,d)),
-    steps:[{label:'分母の最高次 n² で分子分母を割る', e:FR(S([[a,null],over(b,1),over(c,2)]),S([[d,null],over(e,2)]))}],
+  let p,q,a,b,d,e;
+  do{
+    p=ri(1,3); q=ri(1,3); a=nz(-5,5); b=nz(-6,6); d=ri(1,5); e=nz(-9,9);
+  }while([5,12,30].some(n=>Math.abs(d*Math.pow(n,q)+e)<1e-9));
+  const t=(c,k)=> k>0 ? [c,np(k)] : k===0 ? [c,null] : [sg(c),FR(N(Math.abs(c)),np(-k))];
+  const ans = p<q ? N(0) : p===q ? RV(Q(a,d)) : INFV(sg(a)*sg(d));
+  return {key:`sr${p},${q},${a},${b},${d},${e}`, mode:'lim',
+    q:FR(S([[a,np(p)],[b,np(p-1)]]),S([[d,np(q)],[e,null]])), a:ans,
+    steps:[{label:`分母の最高次 n${['','','²','³'][q]} で分子分母を割る`,
+      e:FR(S([t(a,p-q),t(b,p-1-q)]),S([t(d,0),t(e,-q)]))}],
     ns:[5,12,30], nlim:[1e5,3e5]};
 });
 Sq(1,'sq','√ を含む数列の極限',()=>{
@@ -621,6 +769,19 @@ Sq(1,'sq','√ を含む数列の極限',()=>{
   return {key:`ss${a}`, mode:'lim', q:S([[1,R],[-1,NV]]), a:RV(Q(a,2)),
     steps:[{label:'分子を有理化', e:FR(C(a,NV),S([[1,R],[1,NV]]))}],
     ns:[m+3,m+12,m+40], nlim:[1e5,3e5]};
+});
+Sq(3,'sq','n ×（√ の差）の極限',()=>{
+  const a=ri(1,9)*pick([1,-1]), R=SQ(S([[1,np(2)],[a,null]]));
+  return {key:`nd${a}`, mode:'lim', q:P(NV,PAR(S([[1,R],[-1,NV]]))), a:RV(Q(a,2)),
+    steps:[{label:'かっこの中を有理化', e:FR(C(a,NV),S([[1,R],[1,NV]]))}],
+    ns:[4,9,25], nlim:[1e4,1e5]};   // beyond this the subtraction loses too many digits
+});
+Sq(2,'sq','はさみうち（指数で割る）',()=>{
+  const f=pick(['sin','cos']), b=ri(2,4), B=pw(b,1,NMi,n=>n);
+  const Qx=FR(F(f,NV,true),B), bound=FR(N(1),B);
+  return {key:`hz${f}${b}`, mode:'lim', q:Qx, a:N(0),
+    steps:[{label:'|'+f+'| ≦ 1 ではさむ', m:ABS(Qx.m)+'<mo>≦</mo>'+bound.m, bound}],
+    ns:[2,5,9], nlim:[100,200]};
 });
 Sq(1,'se','無限等比級数の和',()=>{
   const A=ri(1,9); let p,q; do{ q=ri(2,6); p=nz(-(q-1),q-1); }while(gcd(Math.abs(p),q)!==1);
@@ -743,8 +904,8 @@ Sq(3,'se','無限級数（2つの等比級数に分ける）',()=>{
 // ======================================================================
 // public API
 // ======================================================================
-const LIM=(to,v)=>{
-  const t = to===Infinity ? '<mi>∞</mi>' : to===-Infinity ? NEG+'<mi>∞</mi>' : intM(to);
+const LIM=(to,v,toM)=>{
+  const t = toM ? toM : to===Infinity ? '<mi>∞</mi>' : to===-Infinity ? NEG+'<mi>∞</mi>' : intM(to);
   return '<munder><mi>lim</mi><mrow><mi>'+(v||'x')+'</mi><mo>→</mo>'+t+'</mrow></munder>'+THIN;   // keep "x→0" from running into the next coefficient
 };
 const LIMN='<munder><mi>lim</mi><mrow>'+NMi+'<mo>→</mo>'+INF+'</mrow></munder>'+THIN;
@@ -792,10 +953,11 @@ function decorate(t,p){
     steps: p.steps.map(x=>({label:x.label, m:YP+'<mo>=</mo>'+x.e.m}))});
   if(!s) return Object.assign(common,{
     prompt:'次の極限値を求めよ。',
-    qm: LIM(p.to,p.v)+under(p.q),
+    qm: LIM(p.to,p.v,p.toM)+under(p.q),
     am: (p.a.osc?'':'<mo>=</mo>')+p.a.m,
     steps: p.steps.map(x=>({label:x.label,
-      m:'<mo>=</mo>'+(x.as==='const'?'':LIM(p.to,p.v))+under(x.e)}))});
+      m: x.m !== undefined ? x.m                       // a line written out in full (an inequality, say)
+       : '<mo>=</mo>'+(x.as==='const'?'':LIM(p.to,p.v,p.toM))+under(x.e)}))});
   // sequences: a limit chain, a series, or a recurrence
   const head = p.mode==='lim' ? LIMN : '';
   return Object.assign(common,{
