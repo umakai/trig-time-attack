@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>数Ⅲ 計算ドリル</title>
-<meta name="description" content="微分・極限の計算問題を無限に出題。ノートで解いて、答えを見て、自分で○×をつける自己採点ドリル。">
+<meta name="description" content="微分・極限の計算問題を無限に出題。ジャンルと難度を選び、ノートで解いて、自分で○×をつける自己採点ドリル。">
 <style>
   :root{
     --bg:#14162B; --panel:#1F2240; --panel-hi:#2A2E55;
@@ -21,36 +21,41 @@
     display:flex;justify-content:center;min-height:100dvh;
   }
   .app{width:100%;max-width:440px;padding:14px 16px 0;display:flex;flex-direction:column;min-height:100dvh;}
+  .page{display:flex;flex-direction:column;flex:1;}
 
   .title{font-size:26px;font-weight:800;letter-spacing:.04em;margin:12px 0 2px;}
   .title .accent{color:var(--gold);}
   .subtitle{color:var(--ink-dim);font-size:13px;margin-bottom:16px;}
 
-  /* settings card — same parts as the trig app */
+  /* ---- setup ---- */
   .scard{border:1px solid var(--panel-hi);border-radius:14px;padding:12px;margin-bottom:12px;}
   .scard-title{font-size:12px;font-weight:800;letter-spacing:.14em;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
   .scard-title::before{content:"";width:3px;height:13px;border-radius:2px;background:var(--gold);}
-  .srow{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-  .srow:last-child{margin-bottom:0;}
-  .srow .sl{width:34px;flex-shrink:0;font-size:12px;color:var(--ink-dim);font-weight:700;}
-  .seg{display:flex;gap:6px;flex:1;}
-  .seg button{
-    flex:1;padding:9px 2px;border:none;border-radius:10px;
-    background:var(--panel);color:var(--ink-dim);
-    font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
-  }
-  .seg button.sel{background:var(--gold);color:#1A1400;}
-  .seg.narrow button{font-size:11.5px;letter-spacing:-.02em;padding:9px 0;}
-  .seg.wrap{flex-wrap:wrap;}
-  .seg.wrap button{flex:0 1 auto;padding:8px 11px;font-size:12px;}
-  .seg button:disabled{opacity:.3;cursor:default;}
+  .grp{margin-bottom:12px;}
+  .grp:last-child{margin-bottom:0;}
+  .grp-head{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .grp-name{font-size:12px;color:var(--ink-dim);font-weight:700;}
+  .grp-all{margin-left:auto;background:none;border:1px solid var(--panel-hi);border-radius:8px;
+    color:var(--ink-dim);font-size:11px;font-family:inherit;padding:3px 9px;cursor:pointer;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{border:none;border-radius:10px;background:var(--panel);color:var(--ink-dim);
+    font-size:12.5px;font-weight:600;font-family:inherit;padding:8px 11px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;}
+  .chip .cnt{font-size:10.5px;opacity:.75;font-family:ui-monospace,Menlo,monospace;}
+  .chip.sel{background:var(--gold);color:#1A1400;}
+  .chip.none{opacity:.35;}
+  .startline{font-size:11.5px;color:var(--ink-dim);text-align:center;margin-top:8px;min-height:1em;}
 
+  /* ---- quiz ---- */
+  .qbar{display:flex;align-items:center;gap:10px;margin:6px 0 10px;}
+  .qbar .sum{font-size:12px;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .qbar button{margin-left:auto;flex-shrink:0;background:none;border:1px solid var(--panel-hi);border-radius:10px;
+    color:var(--ink-dim);font-size:12px;font-family:inherit;font-weight:600;padding:6px 12px;cursor:pointer;}
   .stats{display:flex;align-items:center;gap:14px;font-size:13px;color:var(--ink-dim);margin:2px 2px 10px;}
   .stats b{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:15px;color:var(--ink);}
   .stats .ok b{color:var(--ok);} .stats .ng b{color:var(--ng);}
   .stats .rev{margin-left:auto;color:var(--gold);font-weight:700;font-size:12px;}
 
-  /* problem card */
   .qcard{background:var(--panel);border-radius:14px;padding:14px 14px 16px;}
   .qhead{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-dim);font-weight:700;letter-spacing:.06em;}
   .qhead .num{font-family:ui-monospace,Menlo,monospace;}
@@ -74,6 +79,7 @@
     background:linear-gradient(to bottom, rgba(20,22,43,0), var(--bg) 30%);}
   .mainbtn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--gold);color:#1A1400;
     font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;}
+  .mainbtn:disabled{opacity:.35;cursor:default;}
   .judge{display:flex;gap:10px;}
   .judge button{flex:1;padding:16px 4px;border-radius:14px;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;}
   .okbtn{background:rgba(74,222,128,.12);border:1.5px solid var(--ok);color:var(--ok);}
@@ -85,57 +91,60 @@
 <body>
 <div class="app">
   <div class="title">数Ⅲ <span class="accent">計算</span>ドリル</div>
-  <div class="subtitle">ノートで解いて、答えを見て、自分で○×。</div>
+  <div class="subtitle" id="subtitle">ノートで解いて、答えを見て、自分で○×。</div>
 
-  <div class="scard">
-    <div class="scard-title">出題設定</div>
-    <div class="srow">
-      <div class="sl">分野</div>
-      <div class="seg narrow" id="seg-field">
-        <button data-v="d">導関数</button><button data-v="l">関数の極限</button><button data-v="s">数列の極限</button><button data-v="mix">MIX</button>
+  <!-- ============ 設定 ============ -->
+  <div class="page" id="page-setup">
+    <div class="scard">
+      <div class="scard-title">出題するジャンル</div>
+      <div id="groups"></div>
+    </div>
+    <div class="scard">
+      <div class="scard-title">難度</div>
+      <div class="chips" id="levels"></div>
+    </div>
+    <div class="actions">
+      <button class="mainbtn" id="btn-start">この設定で始める</button>
+      <div class="startline" id="startline"></div>
+    </div>
+  </div>
+
+  <!-- ============ 出題 ============ -->
+  <div class="page" id="page-quiz" hidden>
+    <div class="qbar">
+      <span class="sum" id="q-sum"></span>
+      <button id="btn-setup">設定</button>
+    </div>
+    <div class="stats">
+      <span>今日 <b id="st-n">0</b> 問</span>
+      <span class="ok">○ <b id="st-ok">0</b></span>
+      <span class="ng">× <b id="st-ng">0</b></span>
+      <span class="rev" id="st-rev"></span>
+    </div>
+
+    <div class="qcard">
+      <div class="qhead">
+        <span class="num" id="q-num"></span><span id="q-tag"></span>
+        <span class="revtag" id="q-rev" hidden>復習</span>
+      </div>
+      <div class="qprompt" id="q-prompt"></div>
+      <div class="mbox qmath" id="q-math"></div>
+      <div class="ans" id="ans" hidden>
+        <div class="method" id="a-method"></div>
+        <div id="a-steps"></div>
+        <div class="final-label">答え</div>
+        <div class="mbox final" id="a-final"></div>
       </div>
     </div>
-    <div class="srow" id="row-sub" hidden>
-      <div class="sl">種類</div>
-      <div class="seg wrap" id="seg-sub"></div>
-    </div>
-    <div class="srow">
-      <div class="sl">難度</div>
-      <div class="seg" id="seg-level">
-        <button data-v="1">基本</button><button data-v="2">標準</button><button data-v="3">応用</button><button data-v="0">MIX</button>
+
+    <div class="actions">
+      <button class="mainbtn" id="btn-show">答えを見る</button>
+      <div class="judge" id="judge" hidden>
+        <button class="okbtn" id="btn-ok">○ 合ってた</button>
+        <button class="ngbtn" id="btn-ng">× 間違えた</button>
       </div>
+      <div class="hint" id="hint">解けたら「答えを見る」</div>
     </div>
-  </div>
-
-  <div class="stats">
-    <span>今日 <b id="st-n">0</b> 問</span>
-    <span class="ok">○ <b id="st-ok">0</b></span>
-    <span class="ng">× <b id="st-ng">0</b></span>
-    <span class="rev" id="st-rev"></span>
-  </div>
-
-  <div class="qcard">
-    <div class="qhead">
-      <span class="num" id="q-num"></span><span id="q-tag"></span>
-      <span class="revtag" id="q-rev" hidden>復習</span>
-    </div>
-    <div class="qprompt" id="q-prompt"></div>
-    <div class="mbox qmath" id="q-math"></div>
-    <div class="ans" id="ans" hidden>
-      <div class="method" id="a-method"></div>
-      <div id="a-steps"></div>
-      <div class="final-label">答え</div>
-      <div class="mbox final" id="a-final"></div>
-    </div>
-  </div>
-
-  <div class="actions">
-    <button class="mainbtn" id="btn-show">答えを見る</button>
-    <div class="judge" id="judge" hidden>
-      <button class="okbtn" id="btn-ok">○ 合ってた</button>
-      <button class="ngbtn" id="btn-ng">× 間違えた</button>
-    </div>
-    <div class="hint" id="hint">解けたら「答えを見る」</div>
   </div>
 </div>
 
@@ -235,23 +244,23 @@ const factor=k=>k<0?PAR(N(k)):N(k);     // a number after "·"
 // derivatives  (level 1 基本 / 2 標準 / 3 応用)
 // ======================================================================
 const T=[];
-function D(level,name,fn){ T.push({kind:'d',level,name,fn}); }
+function D(level,sub,name,fn){ T.push({kind:'d',level,sub,name,fn}); }
 function L(level,sub,name,fn){ T.push({kind:'l',level,sub,name,fn}); }
 const OUTER='外の微分 × 中の微分', PROD='積の微分', QUOT='商の微分';
 const away=(a,b)=>[-b/a+0.35,-b/a+3];   // stay on one side of the root of ax+b
 
-D(1,'合成関数（1次式のn乗）',()=>{
+D(1,'comp','合成関数（1次式のn乗）',()=>{
   const [a,b]=coprime(()=>[pick([2,3,4,-2,-3]),nz(-5,5)]), n=ri(3,6), U=lin(a,b);
   return {key:`pl${a},${b},${n}`, q:PW(U,n,true), a:C(n*a,PW(U,n-1,true)),
     steps:[{label:OUTER, e:P(C(n,PW(U,n-1,true)),DOT,factor(a))}], dom:[-3,3]};
 });
-D(1,'合成関数（指数関数）',()=>{
+D(1,'comp','合成関数（指数関数）',()=>{
   let a,b; do{ a=nz(-4,4); b=ri(-3,3); }while(a===1&&b===0);
   const U=b===0?mono(a):lin(a,b);
   return {key:`el${a},${b}`, q:EXP(U), a:C(a,EXP(U)),
     steps:[{label:OUTER, e:P(EXP(U),DOT,factor(a))}], dom:[-1.5,1.5]};
 });
-D(1,'合成関数（三角関数）',()=>{
+D(1,'comp','合成関数（三角関数）',()=>{
   const f=pick(['sin','cos','tan']); let k,b; do{ k=ri(2,5); b=Math.random()<0.5?0:nz(-3,3); }while(b!==0&&gcd(k,b)!==1);
   const U=b===0?mono(k):lin(k,b), s=b===0;
   let a,st;
@@ -261,35 +270,35 @@ D(1,'合成関数（三角関数）',()=>{
   return {key:`tl${f}${k},${b}`, q:F(f,U,s), a, steps:[{label:OUTER,e:st}],
     dom: f==='tan' ? [(-1.2-b)/k,(1.2-b)/k] : [-2,2]};
 });
-D(1,'合成関数（対数関数）',()=>{
+D(1,'comp','合成関数（対数関数）',()=>{
   const [a,b]=coprime(()=>[ri(2,5),nz(-5,5)]), U=lin(a,b);
   return {key:`lg${a},${b}`, q:F('log',U,false), a:FR(N(a),U),
     steps:[{label:OUTER, e:P(FR(N(1),U),DOT,N(a))}], dom:away(a,b)};
 });
-D(1,'合成関数（分数関数）',()=>{
+D(1,'comp','合成関数（分数関数）',()=>{
   const [a,b]=coprime(()=>[pick([2,3,-2,-3]),nz(-4,4)]), n=ri(2,4), U=lin(a,b);
   return {key:`ip${a},${b},${n}`, q:FR(N(1),PW(U,n,true)), a:SF(-n*a,PW(U,n+1,true)),
     steps:[{label:'負の指数と見て 外×中', e:P(C(-n,PW(U,-(n+1),true)),DOT,factor(a))}],
     dom: a>0 ? away(a,b) : [-b/a-3,-b/a-0.35]};
 });
-D(1,'合成関数（無理関数）',()=>{
+D(1,'comp','合成関数（無理関数）',()=>{
   const [a,b]=coprime(()=>[ri(2,5),nz(-5,5)]), U=lin(a,b), r=Q(a,2);
   const den = r[1]===1 ? SQ(U) : P(N(r[1]),SQ(U));
   return {key:`sq${a},${b}`, q:SQ(U), a:FR(N(r[0]),den),
     steps:[{label:OUTER, e:P(FR(N(1),P(N(2),SQ(U))),DOT,N(a))}], dom:away(a,b)};
 });
 
-D(2,'積の微分（多項式 × 指数関数）',()=>{
+D(2,'prod','積の微分（多項式 × 指数関数）',()=>{
   const n=ri(1,3), a=nz(-3,3), EA=EXP(mono(a)), t=tidy([[a,X],[n,null]]);
   return {key:`xe${n},${a}`, q:P(xp(n),EA), a:C(t.k,P(xp(n-1),inner(t),EA)),
     steps:[{label:PROD, e:S([[n,P(xp(n-1),EA)],[a,P(xp(n),EA)]])}], dom:[-2,2]};
 });
-D(2,'積の微分（多項式 × 対数関数）',()=>{
+D(2,'prod','積の微分（多項式 × 対数関数）',()=>{
   const n=ri(1,4), c=ri(1,3), LG=F('log',mono(c),true), I=S([[n,LG],[1,null]]);
   return {key:`xl${n},${c}`, q:P(xp(n),LG), a: n===1 ? I : P(xp(n-1),PAR(I)),
     steps:[{label:PROD, e:S([[n,P(xp(n-1),LG)],[1,P(xp(n),DOT,FR(N(1),X))]])}], dom:[0.3,4]};
 });
-D(2,'積の微分（指数関数 × 三角関数）',()=>{
+D(2,'prod','積の微分（指数関数 × 三角関数）',()=>{
   const a=nz(-3,3), b=ri(1,3), f=pick(['sin','cos']), EA=EXP(mono(a)), B=mono(b);
   const SN=F('sin',B,true), CS=F('cos',B,true);
   const terms = f==='sin' ? [[a,SN],[b,CS]] : [[a,CS],[-b,SN]];
@@ -298,58 +307,58 @@ D(2,'積の微分（指数関数 × 三角関数）',()=>{
   return {key:`et${f}${a},${b}`, q:P(EA,f==='sin'?SN:CS), a:C(t.k,P(EA,inner(t))),
     steps:[{label:PROD, e:st}], dom:[-1.5,1.5]};
 });
-D(2,'合成関数（三角関数のn乗）',()=>{
+D(2,'comp','合成関数（三角関数のn乗）',()=>{
   const f=pick(['sin','cos']), g=f==='sin'?'cos':'sin', n=ri(2,3), a=ri(1,3), A=mono(a);
   const lower=n-1>1?n-1:undefined, sgn=f==='sin'?1:-1;
   const second = f==='sin' ? C(a,F(g,A,true)) : PAR(C(-a,F(g,A,true)));
   return {key:`tp${f}${n},${a}`, q:F(f,A,true,n), a:C(sgn*n*a,P(F(f,A,true,lower),F(g,A,true))),
     steps:[{label:OUTER, e:P(C(n,F(f,A,true,lower)),DOT,second)}], dom:[-2,2]};
 });
-D(2,'合成関数（無理関数）',()=>{
+D(2,'comp','合成関数（無理関数）',()=>{
   const [a,c]=coprime(()=>[ri(1,4),ri(1,9)]), U=S([[a,xp(2)],[c,null]]);
   return {key:`sq2${a},${c}`, q:SQ(U), a:FR(C(a,X),SQ(U)),
     steps:[{label:OUTER, e:P(FR(N(1),P(N(2),SQ(U))),DOT,C(2*a,X))}], dom:[-2,2]};
 });
-D(2,'合成関数（対数関数）',()=>{
+D(2,'comp','合成関数（対数関数）',()=>{
   const [a,c]=coprime(()=>[ri(1,3),ri(1,9)]), U=S([[a,xp(2)],[c,null]]);
   return {key:`lq${a},${c}`, q:F('log',U,false), a:FR(C(2*a,X),U),
     steps:[{label:OUTER, e:P(FR(N(1),U),DOT,C(2*a,X))}], dom:[-2,2]};
 });
-D(2,'合成関数（指数関数）',()=>{
+D(2,'comp','合成関数（指数関数）',()=>{
   const a=nz(-3,3), b=ri(-3,3), EQ=EXP(S([[a,xp(2)],[b,X]]));
   const d=S([[2*a,X],[b,null]]), t=tidy(b===0?[[2*a,X]]:[[2*a,X],[b,null]]);
   return {key:`eq${a},${b}`, q:EQ, a:C(t.k,P(inner(t),EQ)),
     steps:[{label:OUTER, e:P(EQ,DOT,PAR(d))}], dom:[-1.2,1.2]};
 });
 
-D(3,'商の微分（対数関数）',()=>{
+D(3,'quot','商の微分（対数関数）',()=>{
   const n=ri(1,3), c=ri(1,3), LG=F('log',mono(c),true);
   return {key:`lx${n},${c}`, q:FR(LG,xp(n)), a:FR(S([[1,null],[-n,LG]]),xp(n+1)),
     steps:[{label:QUOT, e:FR(S([[1,P(FR(N(1),X),DOT,xp(n))],[-n,P(xp(n-1),LG)]]),xp(2*n))}], dom:[0.3,4]};
 });
-D(3,'商の微分（分数関数）',()=>{
+D(3,'quot','商の微分（分数関数）',()=>{
   const c=ri(1,9), U=S([[1,xp(2)],[c,null]]);
   return {key:`xq${c}`, q:FR(X,U), a:FR(S([[c,null],[-1,xp(2)]]),PW(U,2,true)),
     steps:[{label:QUOT, e:FR(S([[1,PAR(U)],[-1,P(X,DOT,C(2,X))]]),PW(U,2,true))}], dom:[-3,3]};
 });
-D(3,'商の微分（分数関数）',()=>{
+D(3,'quot','商の微分（分数関数）',()=>{
   const c=nz(-5,5), U=lin(1,c);
   return {key:`qx${c}`, q:FR(xp(2),U), a:FR(P(X,PAR(lin(1,2*c))),PW(U,2,true)),
     steps:[{label:QUOT, e:FR(S([[2,P(X,PAR(U))],[-1,xp(2)]]),PW(U,2,true))}], dom:away(1,c)};
 });
-D(3,'商の微分（指数関数）',()=>{
+D(3,'quot','商の微分（指数関数）',()=>{
   const a=nz(-3,3), n=ri(1,2), EA=EXP(mono(a)), t=tidy([[a,X],[-n,null]]);
   // (e^{ax}/x^n)' = e^{ax}(ax - n)/x^{n+1}
   return {key:`ex${a},${n}`, q:FR(EA,xp(n)), a:signed(t.k,FR(C(Math.abs(t.k),P(inner(t),EA)),xp(n+1))),
     steps:[{label:QUOT, e:FR(S([[a,P(EA,DOT,xp(n))],[-n,P(EA,DOT,n>1?xp(n-1):N(1))]]),xp(2*n))}], dom:[0.3,3]};
 });
-D(3,'商の微分（1次分数関数）',()=>{
+D(3,'quot','商の微分（1次分数関数）',()=>{
   let a,b,c,d; do{ a=nz(-4,4); b=nz(-5,5); c=ri(1,4); d=nz(-5,5); }while(a*d-b*c===0||gcd(a,b)!==1||gcd(c,d)!==1);
   const U1=lin(a,b), U2=lin(c,d);
   return {key:`ll${a},${b},${c},${d}`, q:FR(U1,U2), a:SF(a*d-b*c,PW(U2,2,true)),
     steps:[{label:QUOT, e:FR(S([[a,PAR(U2)],[-1,P(PAR(U1),DOT,N(c))]]),PW(U2,2,true))}], dom:away(c,d)};
 });
-D(3,'商の微分（三角関数）',()=>{
+D(3,'quot','商の微分（三角関数）',()=>{
   const a=ri(1,3), f=pick(['sin','cos']), X1=X;
   const SN=F('sin',X1,true), CS=F('cos',X1,true);
   if(f==='sin'){
@@ -365,12 +374,12 @@ D(3,'商の微分（三角関数）',()=>{
     steps:[{label:QUOT+'（sin²x + cos²x = 1）', e:FR(S([[-1,P(PAR(DEN),SN)],[-1,F('cos',X1,true,2)]]),PW(DEN,2,true))}],
     dom:[-1.2,2.5]};
 });
-D(3,'合成関数（対数・無理関数）',()=>{
+D(3,'comp','合成関数（対数・無理関数）',()=>{
   const c=ri(1,9), R=SQ(S([[1,xp(2)],[c,null]])), ARG=S([[1,X],[1,R]]);
   return {key:`ls${c}`, q:F('log',ARG,false), a:FR(N(1),R),
     steps:[{label:OUTER, e:P(FR(N(1),ARG),DOT,PAR(S([[1,null],[1,FR(X,R)]])))}], dom:[-2,2]};
 });
-D(3,'積の微分（無理関数）',()=>{
+D(3,'prod','積の微分（無理関数）',()=>{
   const c=ri(2,9), U=S([[c,null],[-1,xp(2)]]), R=SQ(U), w=Math.sqrt(c)*0.8;
   return {key:`xs${c}`, q:P(X,R), a:FR(S([[c,null],[-2,xp(2)]]),R),
     steps:[{label:PROD, e:S([[1,R],[-1,P(X,DOT,FR(X,R))]])}], dom:[-w,w]};
@@ -468,6 +477,52 @@ L(3,'fr','√ の差の極限（x → ∞）',()=>{
 });
 
 // ----------------------------------------------------------------------
+// limits at −∞, and answers that are not a number
+// ----------------------------------------------------------------------
+const INFM='<mi>∞</mi>';
+const INFV=s=>({m:(s<0?NEG:'')+INFM, inf:s, f:()=>s*Infinity});          // 正/負の無限大に発散
+const OSC={m:'<mtext>振動して極限はない</mtext>', osc:true, f:()=>NaN};
+const LT='<mo>&lt;</mo>', GT='<mo>&gt;</mo>', LE='<mo>≦</mo>';
+const dirName=d=>d===Infinity?'∞':'−∞';
+const overx=(k,j)=>[sg(k),FR(N(Math.abs(k)),xp(j))];                      // ± c/xʲ inside a divided-out sum
+
+L(2,'fr','√ を含む極限（x → −∞）',()=>{
+  const a=nz(-8,8), R=SQ(S([[1,xp(2)],[a,X]]));
+  return {key:`mq${a}`, to:-Infinity, q:S([[1,R],[1,X]]), a:RV(Q(-a,2)),
+    steps:[{label:'分子を有理化', e:FR(C(a,X),S([[1,R],[-1,X]]))}]};
+});
+L(2,'fr','√ と1次式の商（x → ±∞）',()=>{
+  const k=ri(1,3), c=k*k, d=ri(1,9), a=nz(-5,5), b=nz(-5,5), to=pick([Infinity,-Infinity]);
+  const num=S([[a,X],[b,null]]), den=SQ(S([[c,xp(2)],[d,null]]));
+  const div=FR(S([[a,null],overx(b,1)]),SQ(S([[c,null],overx(d,2)])));
+  return {key:`ms${k},${d},${a},${b},${to>0?'p':'m'}`, to,
+    q:FR(num,den), a:RV(Q(to===Infinity?a:-a,k)),
+    steps:[{label:`x → ${dirName(to)} だから √x² = ${to===Infinity?'x':'−x'}`,
+      e: to===Infinity ? div : NEGV(div)}]};
+});
+L(3,'fr','発散する有理式（x → ±∞）',()=>{
+  const a=nz(-4,4), b=nz(-6,6), c=nz(-9,9); let d,e;
+  do{ d=nz(-4,4); e=nz(-9,9); }while(Math.abs(e/d)>7);   // the pole stays inside the probe points
+  const to=pick([Infinity,-Infinity]);
+  const s=sg(a)*sg(d)*(to===Infinity?1:-1);
+  return {key:`mi${a},${b},${c},${d},${e},${to>0?'p':'m'}`, to,
+    q:FR(S([[a,xp(2)],[b,X],[c,null]]),S([[d,X],[e,null]])), a:INFV(s),
+    steps:[{label:'分母の最高次 x で分子分母を割る',
+      e:P(X,FR(S([[a,null],overx(b,1),overx(c,2)]),S([[d,null],overx(e,1)])))}]};
+});
+L(2,'el','eˣ を含む分数式（x → ±∞）',()=>{
+  const a=nz(-4,4), b=nz(-4,4), c=ri(1,4), d=ri(1,4), to=pick([Infinity,-Infinity]);
+  const EP=EXP(X), EN=EXP(mono(-1)), E2=EXP(mono(2)), EM2=EXP(mono(-2));
+  const div = to===Infinity
+    ? FR(S([[a,null],[b,EM2]]),S([[c,null],[d,EM2]]))     // ÷ eˣ
+    : FR(S([[a,E2],[b,null]]),S([[c,E2],[d,null]]));      // ÷ e⁻ˣ
+  return {key:`me${a},${b},${c},${d},${to>0?'p':'m'}`, to,
+    q:FR(S([[a,EP],[b,EN]]),S([[c,EP],[d,EN]])), a:RV(to===Infinity?Q(a,c):Q(b,d)),
+    near: to===Infinity?[40,80]:[-40,-80],            // e^{±x} overflows long before 10⁵
+    steps:[{label:`分子分母を ${to===Infinity?'eˣ':'e⁻ˣ'} で割る`, e:div}]};
+});
+
+// ----------------------------------------------------------------------
 // limits that come from the definition of the derivative (the variable is h)
 // ----------------------------------------------------------------------
 const HM='<mi>h</mi>', PIM='<mi>π</mi>';
@@ -551,9 +606,9 @@ const KM1=S([[1,KV],[-1,null]]).m;                 // k − 1
 const SIG=t=>'<munderover><mo movablelimits="false">∑</mo><mrow>'+KMi+'<mo>=</mo>'+mn(1)+'</mrow><mrow>'+INF+'</mrow></munderover>'+THIN+t;
 // both bars in one mrow, so they stretch to the same height
 const ABS=s=>'<mrow><mo stretchy="true" fence="true" lspace="0em" rspace="0em">|</mo><mrow>'+s+'</mrow><mo stretchy="true" fence="true" lspace="0em" rspace="0em">|</mo></mrow>';
-function Sq(level,name,fn){ T.push({kind:'s',level,name,fn}); }
+function Sq(level,sub,name,fn){ T.push({kind:'s',level,sub,name,fn}); }
 
-Sq(1,'数列の極限（分数式）',()=>{
+Sq(1,'sq','数列の極限（分数式）',()=>{
   const a=nz(-5,5), b=nz(-6,6), c=nz(-9,9), d=ri(1,5), e=nz(-9,9);
   const over=(k,j)=>[sg(k),FR(N(Math.abs(k)),np(j))];
   return {key:`sr${a},${b},${c},${d},${e}`, mode:'lim',
@@ -561,13 +616,13 @@ Sq(1,'数列の極限（分数式）',()=>{
     steps:[{label:'分母の最高次 n² で分子分母を割る', e:FR(S([[a,null],over(b,1),over(c,2)]),S([[d,null],over(e,2)]))}],
     ns:[5,12,30], nlim:[1e5,3e5]};
 });
-Sq(1,'√ を含む数列の極限',()=>{
+Sq(1,'sq','√ を含む数列の極限',()=>{
   const a=nz(-8,8), R=SQ(S([[1,np(2)],[a,NV]])), m=Math.abs(a);
   return {key:`ss${a}`, mode:'lim', q:S([[1,R],[-1,NV]]), a:RV(Q(a,2)),
     steps:[{label:'分子を有理化', e:FR(C(a,NV),S([[1,R],[1,NV]]))}],
     ns:[m+3,m+12,m+40], nlim:[1e5,3e5]};
 });
-Sq(1,'無限等比級数の和',()=>{
+Sq(1,'se','無限等比級数の和',()=>{
   const A=ri(1,9); let p,q; do{ q=ri(2,6); p=nz(-(q-1),q-1); }while(gcd(Math.abs(p),q)!==1);
   const R=pw(p,q,KM1,k=>k-1), TERM = A===1 ? R : P(N(A),R);
   return {key:`sg${A},${p},${q}`, mode:'series', q:V(SIG(TERM.m), ()=>A*q/(q-p)),
@@ -576,7 +631,7 @@ Sq(1,'無限等比級数の和',()=>{
       e:FR(N(A),S([[1,null],[[-p,q],null]]))}]};
 });
 
-Sq(2,'等比数列を含む分数式',()=>{
+Sq(2,'gp','等比数列を含む分数式',()=>{
   const [p,q]=pick([[3,2],[4,3],[5,2],[5,3],[5,4],[6,5],[7,2]]);
   const A=ri(1,4), C=ri(1,4), B=nz(-4,4), D=ri(1,4);
   const PN=pw(p,1,NMi,n=>n), QN=pw(q,1,NMi,n=>n), RN=pw(q,p,NMi,n=>n);
@@ -586,14 +641,14 @@ Sq(2,'等比数列を含む分数式',()=>{
     steps:[{label:`分子分母を ${p}ⁿ で割る`, e:FR(S([[A,null],[B,RN]]),S([[C,null],[D,RN]]))}],
     ns:[3,6,10], nlim:[Math.floor(150/Math.log10(p)),Math.floor(280/Math.log10(p))]};   // keep pⁿ inside double range
 });
-Sq(2,'はさみうちの原理',()=>{
+Sq(2,'sq','はさみうちの原理',()=>{
   const f=pick(['sin','cos']), a=ri(1,5), b=ri(1,4);
   const num=F(f,monoN(b),true), den=monoN(a), Qx=FR(num,den), bound=FR(N(1),den);
   return {key:`sh${f}${a},${b}`, mode:'lim', q:Qx, a:N(0),
     steps:[{label:'|'+f+'| ≤ 1 ではさむ', m:ABS(Qx.m)+'<mo>≤</mo>'+bound.m, bound}],
     ns:[2,5,11], nlim:[1e5,3e5]};
 });
-Sq(2,'無限級数（部分分数に分解）',()=>{
+Sq(2,'se','無限級数（部分分数に分解）',()=>{
   const [p,q]=pick([[1,0],[1,1],[2,-1],[2,1],[3,-2],[3,1],[1,2],[2,3]]), c=ri(1,3);
   const A=S([[p,KV],[q,null]]), B=S([[p,KV],[q+p,null]]);
   const Sn=S([[Q(c,p),PAR(S([[1,qf(1,p+q)],[-1,FR(N(1),S([[p,NV],[p+q,null]]))]]))]]);
@@ -604,7 +659,54 @@ Sq(2,'無限級数（部分分数に分解）',()=>{
       e:Sn, f:n=>(c/p)*(1/(p+q)-1/(p*n+q+p))}]};
 });
 
-Sq(3,'漸化式で定まる数列の極限',()=>{
+// ---- 等比数列 rⁿ のいろいろな型 ----
+const RS=[[3,2],[2,1],[5,2],[3,1],[5,4],[7,5],[1,2],[2,3],[3,4],[1,3],[-1,2],[-2,3],[-3,4],[-1,3],
+          [-1,1],[-2,1],[-3,2],[-5,4],[-3,1]];
+const rval=r=>r[0]/r[1];
+Sq(1,'gp','等比数列 rⁿ の極限',()=>{
+  const r=pick(RS), v=rval(r), R=pw(r[0],r[1],NMi,n=>n), rm=RV(Q(r[0],r[1])).m;
+  const absm=ABS(RV(Q(Math.abs(r[0]),r[1])).m);
+  let a, step;
+  if(Math.abs(v)<1){ a=N(0); step={label:'|公比| < 1 だから 0 に収束', m:absm+LT+mn(1), ineq:{l:Math.abs(v),op:'<',r:1}}; }
+  else if(v>1){ a=INFV(1); step={label:'公比 > 1 だから正の無限大に発散', m:rm+GT+mn(1), ineq:{l:v,op:'>',r:1}}; }
+  else { a=OSC; step={label:'公比 ≦ −1 だから振動して極限はない', m:rm+LE+NEG+mn(1), ineq:{l:v,op:'≦',r:-1}}; }
+  return {key:`gr${r[0]},${r[1]}`, mode:'lim', q:R, a, steps:[step], ns:[2,5,9], nlim:[200,400]};
+});
+Sq(2,'gp','rⁿ を含む分数式',()=>{
+  let r, v, a, b;
+  do{
+    r=pick(RS); v=rval(r); a=nz(-5,5); b=nz(-5,5);
+  }while(Math.abs(v)===1 || [1,2,3,4,5,6,7,8,9].some(n=>Math.abs(Math.pow(v,n)+b)<1e-9));  // rⁿ + b = 0 would be a hole
+  const R=pw(r[0],r[1],NMi,n=>n);
+  const big=Math.abs(v)>1;
+  const iv=Q(r[1],r[0]), inv=pw(iv[0],iv[1],NMi,n=>n);     // (1/r)ⁿ, sign kept on the numerator
+  const step = big
+    ? {label:'分子分母を rⁿ で割る', e:FR(S([[1,null],[a,inv]]),S([[1,null],[b,inv]]))}
+    : {label:'|公比| < 1 だから rⁿ → 0', m:ABS(RV(Q(Math.abs(r[0]),r[1])).m)+LT+mn(1), ineq:{l:Math.abs(v),op:'<',r:1}};
+  return {key:`gf${r[0]},${r[1]},${a},${b}`, mode:'lim',
+    q:FR(S([[1,R],[a,null]]),S([[1,R],[b,null]])), a: big ? N(1) : RV(Q(a,b)),
+    steps:[step], ns:[3,6,9], nlim: big?[200,400]:[1e4,3e4]};
+});
+Sq(2,'sq','(−1)ⁿ を含む極限',()=>{
+  const a=ri(1,5), b=ri(0,6), j=ri(1,2), den=S([[a,np(j)],[b,null]]);
+  const A=pw(-1,1,NMi,n=>n), Qx=FR(A,den);
+  return {key:`ga${a},${b},${j}`, mode:'lim', q:Qx, a:N(0),
+    steps:[{label:'|(−1)ⁿ| = 1 ではさむ', m:ABS(Qx.m)+'<mo>≦</mo>'+FR(N(1),den).m, bound:FR(N(1),den)}],
+    ns:[2,5,11], nlim:[1e4,3e4]};
+});
+Sq(3,'gp','指数が n + 1 の等比分数式',()=>{
+  const [p,q]=pick([[3,2],[4,3],[5,2],[5,3],[5,4],[6,5],[7,2]]);
+  const A=ri(1,4), C=ri(1,4), B=nz(-4,4), D=ri(1,4), E=S([[1,NV],[1,null]]).m;
+  const P1=pw(p,1,E,n=>n+1), Q1=pw(q,1,E,n=>n+1), PN=pw(p,1,NMi,n=>n), QN=pw(q,1,NMi,n=>n), RN=pw(q,p,NMi,n=>n);
+  const cp=(c,e)=>Math.abs(c)===1?[c,e]:[sg(c),P(N(Math.abs(c)),DOT,e)];
+  return {key:`gn${p},${q},${A},${B},${C},${D}`, mode:'lim',
+    q:FR(S([cp(A,P1),cp(B,Q1)]),S([cp(C,PN),cp(D,QN)])), a:RV(Q(A*p,C)),
+    steps:[{label:`${p}ⁿ⁺¹ = ${p}·${p}ⁿ として ${p}ⁿ で割る`,
+      e:FR(S([[A*p,null],cp(B*q,RN)]),S([[C,null],cp(D,RN)]))}],
+    ns:[3,6,10], nlim:[Math.floor(150/Math.log10(p)),Math.floor(280/Math.log10(p))]};
+});
+
+Sq(3,'rc','漸化式で定まる数列の極限',()=>{
   let p,pq,q0,a1,al,df;
   do{
     [p,pq]=pick([[1,2],[1,3],[2,3],[1,4],[3,4],[-1,2],[-1,3],[-2,3]]);
@@ -620,14 +722,14 @@ Sq(3,'漸化式で定まる数列の極限',()=>{
     steps:[{label:'特性方程式の解 α を使って一般項', lead:amn+'<mo>=</mo>', as:'closed',
       e:S([[al,null],[df,POW]]), f:n=>al[0]/al[1]+(df[0]/df[1])*Math.pow(p/pq,n-1)}]};
 });
-Sq(3,'√ の差の極限（数列）',()=>{
+Sq(3,'sq','√ の差の極限（数列）',()=>{
   const [a,b]=distinct(-6,6,-6,6), m=Math.max(Math.abs(a),Math.abs(b));
   const R1=SQ(S([[1,np(2)],[a,NV]])), R2=SQ(S([[1,np(2)],[b,NV]]));
   return {key:`sd${a},${b}`, mode:'lim', q:S([[1,R1],[-1,R2]]), a:RV(Q(a-b,2)),
     steps:[{label:'分子を有理化', e:FR(C(a-b,NV),S([[1,R1],[1,R2]]))}],
     ns:[m+3,m+12,m+40], nlim:[1e5,3e5]};
 });
-Sq(3,'無限級数（2つの等比級数に分ける）',()=>{
+Sq(3,'se','無限級数（2つの等比級数に分ける）',()=>{
   const c=ri(5,7); let a,b; do{ a=ri(2,c-2); b=ri(2,c-2); }while(a===b);
   const AK=pw(a,1,KMi,k=>k), BK=pw(b,1,KMi,k=>k), CK=pw(c,1,KMi,k=>k);
   const v=a/(c-a)+b/(c-b);
@@ -642,13 +744,19 @@ Sq(3,'無限級数（2つの等比級数に分ける）',()=>{
 // public API
 // ======================================================================
 const LIM=(to,v)=>{
-  const t = to===Infinity ? '<mi>∞</mi>' : intM(to);
+  const t = to===Infinity ? '<mi>∞</mi>' : to===-Infinity ? NEG+'<mi>∞</mi>' : intM(to);
   return '<munder><mi>lim</mi><mrow><mi>'+(v||'x')+'</mi><mo>→</mo>'+t+'</mrow></munder>'+THIN;   // keep "x→0" from running into the next coefficient
 };
 const LIMN='<munder><mi>lim</mi><mrow>'+NMi+'<mo>→</mo>'+INF+'</mrow></munder>'+THIN;
 const LEVELS={1:'基本',2:'標準',3:'応用'};
 const KINDS={d:'導関数', l:'関数の極限', s:'数列の極限'};
-const SUBS={t:'三角関数', el:'指数・対数', df:'微分の定義', fr:'分数・無理式'};
+const SUBS={comp:'合成関数', prod:'積の微分', quot:'商の微分',
+  t:'三角関数', el:'指数・対数', df:'微分の定義', fr:'分数・無理式',
+  sq:'数列の極限', gp:'等比数列 rⁿ', se:'無限級数', rc:'漸化式'};
+const GROUPS=[{name:'微分', kind:'d', subs:['comp','prod','quot']},
+              {name:'極限（関数）', kind:'l', subs:['t','el','df','fr']},
+              {name:'極限（数列）', kind:'s', subs:['sq','gp','se','rc']}];
+const ALLSUBS=GROUPS.reduce((a,g)=>a.concat(g.subs),[]);
 // which subtypes a field offers, and which of them have problems at a given level
 const subsOf=(field,level)=>{
   const out=[];
@@ -659,11 +767,11 @@ const under=e=>e.sum ? par(e.m) : e.m;   // lim(x²+x+1), not lim x²+x+1
 let lastName='';
 function generate(opt, recent){
   opt=opt||{}; recent=recent||[];
-  const inField=t=>opt.field==='mix'||!opt.field||t.kind===opt.field;
-  let pool=T.filter(t=>inField(t) && (!opt.level||t.level===opt.level)
-    && (!opt.sub || opt.field==='mix' || t.sub===opt.sub));
-  if(!pool.length) pool=T.filter(t=>inField(t) && (!opt.sub||t.sub===opt.sub));   // never leave the pool empty
-  if(!pool.length) pool=T.filter(inField);
+  const subs=(opt.subs&&opt.subs.length)?opt.subs:ALLSUBS;
+  const levels=(opt.levels&&opt.levels.length)?opt.levels:[1,2,3];
+  let pool=T.filter(t=>subs.indexOf(t.sub)>=0 && levels.indexOf(t.level)>=0);
+  if(!pool.length) pool=T.filter(t=>subs.indexOf(t.sub)>=0);   // never leave the pool empty
+  if(!pool.length) pool=T;
   let tries=0, t, p;
   do{
     const cand = pool.filter(x=>x.name!==lastName);
@@ -685,7 +793,7 @@ function decorate(t,p){
   if(!s) return Object.assign(common,{
     prompt:'次の極限値を求めよ。',
     qm: LIM(p.to,p.v)+under(p.q),
-    am: '<mo>=</mo>'+p.a.m,
+    am: (p.a.osc?'':'<mo>=</mo>')+p.a.m,
     steps: p.steps.map(x=>({label:x.label,
       m:'<mo>=</mo>'+(x.as==='const'?'':LIM(p.to,p.v))+under(x.e)}))});
   // sequences: a limit chain, a series, or a recurrence
@@ -694,15 +802,15 @@ function decorate(t,p){
     prompt: p.mode==='series' ? '次の無限級数の和を求めよ。'
           : p.mode==='rec' ? '次の条件で定まる数列の極限を求めよ。' : '次の極限値を求めよ。',
     qm: head+(p.mode==='lim'?under(p.q):p.q.m),
-    am: (p.amLead ? LIMN+p.amLead : '')+'<mo>=</mo>'+p.a.m,
+    am: (p.amLead ? LIMN+p.amLead : '')+(p.a.osc?'':'<mo>=</mo>')+p.a.m,
     steps: p.steps.map(x=>({label:x.label,
       m: x.m !== undefined ? x.m
        : x.lead !== undefined ? x.lead+x.e.m
        : '<mo>=</mo>'+head+(p.mode==='lim'?under(x.e):x.e.m)}))});
 }
-const count=o=>T.filter(t=>(!o.field||o.field==='mix'||t.kind===o.field)
-  && (!o.level||t.level===o.level) && (!o.sub||t.sub===o.sub)).length;
-const API={generate, templates:T, decorate, LEVELS, KINDS, SUBS, subsOf, count};
+const count=o=>T.filter(t=>(!o.subs||o.subs.indexOf(t.sub)>=0)
+  && (!o.levels||o.levels.indexOf(t.level)>=0)).length;
+const API={generate, templates:T, decorate, LEVELS, KINDS, SUBS, GROUPS, ALLSUBS, subsOf, count};
 if(typeof module!=='undefined' && module.exports) module.exports=API; else root.DRILL=API;
 })(this);
 
@@ -711,7 +819,7 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
-  const KEY='m3drill-v1';
+  const KEY='m3drill-v2';
   const REVIEW_GAP=3;   // a missed problem comes back after this many others
 
   // ---------- persistence (per-device; a blocked store just means nothing is remembered) ----------
@@ -720,60 +828,75 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
     let s={};
     try{ s=JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
     if(s.day!==today()){ s.day=today(); s.n=0; s.ok=0; s.ng=0; }
-    s.field=s.field||'d'; s.level=(s.level===undefined?1:s.level); s.sub=s.sub||'';
+    if(!Array.isArray(s.subs)   || !s.subs.length)   s.subs=DRILL.ALLSUBS.slice();
+    if(!Array.isArray(s.levels) || !s.levels.length) s.levels=[1,2,3];
+    s.subs=s.subs.filter(v=>DRILL.ALLSUBS.indexOf(v)>=0);
     s.queue=s.queue||[]; s.done=s.done||0;
     return s;
   }
   const st=load();
   function save(){ try{ localStorage.setItem(KEY,JSON.stringify(st)); }catch(e){} }
+  const has=(a,v)=>a.indexOf(v)>=0;
+  const toggle=(a,v)=>{ const i=a.indexOf(v); if(i<0) a.push(v); else a.splice(i,1); };
 
-  // ---------- settings ----------
-  function choose(key,v){
-    st[key]=v;
-    if(key==='field') st.sub='';           // the subtypes belong to the field
-    save(); paintSettings();
-    if(!revealed && !cur.review) next(true);   // unanswered problem: swap it for one from the new range
-    else $('hint').textContent='次の問題から切り替わります';
+  // ---------- setup page ----------
+  function buildSetup(){
+    $('groups').innerHTML=DRILL.GROUPS.map(g=>
+      '<div class="grp"><div class="grp-head"><span class="grp-name">'+g.name+'</span>'+
+      '<button class="grp-all" data-grp="'+g.name+'">全部</button></div><div class="chips">'+
+      g.subs.map(v=>'<button class="chip" data-sub="'+v+'">'+DRILL.SUBS[v]+'<span class="cnt"></span></button>').join('')+
+      '</div></div>').join('');
+    $('levels').innerHTML=[1,2,3].map(l=>
+      '<button class="chip" data-lv="'+l+'">'+DRILL.LEVELS[l]+'<span class="cnt"></span></button>').join('');
+    $('groups').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+      toggle(st.subs,b.dataset.sub); save(); paintSetup();
+    }));
+    $('groups').querySelectorAll('.grp-all').forEach(b=>b.addEventListener('click',()=>{
+      const g=DRILL.GROUPS.filter(x=>x.name===b.dataset.grp)[0];
+      const on=g.subs.every(v=>has(st.subs,v));
+      g.subs.forEach(v=>{ const i=st.subs.indexOf(v); if(on && i>=0) st.subs.splice(i,1); if(!on && i<0) st.subs.push(v); });
+      save(); paintSetup();
+    }));
+    $('levels').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+      toggle(st.levels,+b.dataset.lv); save(); paintSetup();
+    }));
   }
-  function segInit(id,key,cast){
-    $(id).querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>choose(key,cast(b.dataset.v))));
-  }
-  segInit('seg-field','field',v=>v);
-  segInit('seg-level','level',v=>+v);
-
-  // 種類 (subtypes of the current field) — built from the templates, so it stays in step with them
-  let subRowFor=null;
-  function paintSettings(){
-    if(!DRILL.count({field:st.field, sub:st.sub, level:st.level})) st.level=0;   // never leave an empty selection
-    const subs=DRILL.subsOf(st.field);
-    const row=$('row-sub'), seg=$('seg-sub');
-    row.hidden = !subs.length;
-    if(subs.length){
-      if(subRowFor!==st.field){        // rebuild only when the field changes, so a tap never lands on a replaced button
-        seg.innerHTML=[''].concat(subs).map(v=>'<button data-v="'+v+'">'+(v?DRILL.SUBS[v]:'すべて')+'</button>').join('');
-        seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>choose('sub',b.dataset.v)));
-        subRowFor=st.field;
-      }
-      seg.querySelectorAll('button').forEach(b=>{
-        b.classList.toggle('sel', b.dataset.v===st.sub);
-        b.disabled = DRILL.count({field:st.field, sub:b.dataset.v, level:st.level})===0;
-      });
-    }else{
-      if(subRowFor!==null){ seg.innerHTML=''; subRowFor=null; }   // leave nothing behind in the hidden row
-      if(st.sub){ st.sub=''; save(); }
-    }
-    $('seg-field').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',b.dataset.v===st.field));
-    $('seg-level').querySelectorAll('button').forEach(b=>{
-      const v=+b.dataset.v;
-      b.classList.toggle('sel',v===st.level);
-      b.disabled = DRILL.count({field:st.field, sub:st.sub, level:v})===0;
+  function paintSetup(){
+    $('groups').querySelectorAll('.chip').forEach(b=>{
+      const v=b.dataset.sub, n=DRILL.count({subs:[v], levels:st.levels});
+      b.classList.toggle('sel',has(st.subs,v));
+      b.classList.toggle('none',n===0);
+      b.querySelector('.cnt').textContent=n;
     });
+    $('groups').querySelectorAll('.grp-all').forEach(b=>{
+      const g=DRILL.GROUPS.filter(x=>x.name===b.dataset.grp)[0];
+      b.textContent=g.subs.every(v=>has(st.subs,v))?'解除':'全部';
+    });
+    $('levels').querySelectorAll('.chip').forEach(b=>{
+      const l=+b.dataset.lv, n=DRILL.count({subs:st.subs, levels:[l]});
+      b.classList.toggle('sel',has(st.levels,l));
+      b.classList.toggle('none',n===0);
+      b.querySelector('.cnt').textContent=n;
+    });
+    const n=DRILL.count({subs:st.subs, levels:st.levels});
+    $('btn-start').disabled=(n===0);
+    $('startline').textContent = n ? '選んだ範囲の問題型 '+n : 'ジャンルと難度を選んでください';
+  }
+  function summary(){
+    const names=st.subs.map(v=>DRILL.SUBS[v]);
+    const gs = names.length===DRILL.ALLSUBS.length ? 'すべてのジャンル'
+             : names.length<=2 ? names.join('・')
+             : names[0]+' ほか'+(names.length-1)+'ジャンル';
+    const ls = st.levels.length===3 ? '全難度'
+             : [1,2,3].filter(l=>has(st.levels,l)).map(l=>DRILL.LEVELS[l]).join('・');
+    return gs+' ／ '+ls;
   }
 
   // ---------- flow ----------
   const recent=[];
   let cur=null, revealed=false, shown=0;
-  const strip=p=>({key:p.key,kind:p.kind,kindName:p.kindName,subName:p.subName,level:p.level,levelName:p.levelName,name:p.name,prompt:p.prompt,qm:p.qm,am:p.am,steps:p.steps});
+  const strip=p=>({key:p.key,kind:p.kind,kindName:p.kindName,subName:p.subName,level:p.level,
+    levelName:p.levelName,name:p.name,prompt:p.prompt,qm:p.qm,am:p.am,steps:p.steps});
   const math=m=>'<math display="block">'+m+'</math>';
 
   function next(replace){
@@ -781,7 +904,7 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
     const i=st.queue.findIndex(q=>q.due<=st.done);
     if(i>=0 && !replace){ p=st.queue.splice(i,1)[0].p; review=true; save(); }
     else{
-      const g=DRILL.generate({field:st.field, level:st.level, sub:st.sub}, recent);
+      const g=DRILL.generate({subs:st.subs, levels:st.levels}, recent);
       p=strip(g); recent.push(p.key); if(recent.length>40) recent.shift();
     }
     if(!replace) shown++;
@@ -792,7 +915,7 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
   function render(){
     const p=cur.p;
     $('q-num').textContent='#'+shown;
-    $('q-tag').textContent=(p.kindName||'')+(p.subName?'（'+p.subName+'）':'')+' ・ '+p.levelName;
+    $('q-tag').textContent=(p.subName||p.kindName||'')+' ・ '+p.levelName;
     $('q-rev').hidden=!cur.review;
     $('q-prompt').textContent=p.prompt;
     $('q-math').innerHTML=math(p.qm);
@@ -800,15 +923,16 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
     $('a-steps').innerHTML=p.steps.map(s=>'<div class="step-label">'+s.label+'</div><div class="mbox step">'+math(s.m)+'</div>').join('');
     $('a-final').innerHTML=math(p.am);
     $('ans').hidden=!revealed;
-    fitAll();
     $('btn-show').hidden=revealed;
     $('judge').hidden=!revealed;
     $('hint').textContent= revealed ? 'ノートの途中式と見比べて、自分で判定' : '解けたら「答えを見る」';
+    $('q-sum').textContent=summary();
     const n=st.queue.length;
-    paintSettings();
     $('st-n').textContent=st.n; $('st-ok').textContent=st.ok; $('st-ng').textContent=st.ng;
     $('st-rev').textContent= n ? '復習待ち '+n : '';
+    fitAll();
   }
+
   // a long expression shrinks (down to 75%) before it needs sideways scrolling
   function fit(box){
     box.style.fontSize='';
@@ -817,6 +941,7 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
   }
   function fitAll(){ document.querySelectorAll('.qcard .mbox').forEach(b=>{ if(b.offsetParent) fit(b); }); }
   window.addEventListener('resize',fitAll);
+
   let lock=0;
   const guard=()=>{ const t=Date.now(); if(t-lock<350) return false; lock=t; return true; };   // no double-tap grading
   $('btn-show').addEventListener('click',()=>{
@@ -835,7 +960,24 @@ if(typeof module!=='undefined' && module.exports) module.exports=API; else root.
   $('btn-ok').addEventListener('click',()=>grade(true));
   $('btn-ng').addEventListener('click',()=>grade(false));
 
-  next(false);
+  // ---------- pages ----------
+  function showPage(p){
+    $('page-setup').hidden=(p!=='setup');
+    $('page-quiz').hidden=(p==='setup');
+    $('subtitle').hidden=(p!=='setup');   // on the quiz page the problem comes first
+    window.scrollTo({top:0});
+    if(p!=='setup') fitAll();
+  }
+  $('btn-start').addEventListener('click',()=>{
+    st.started=true; save();
+    showPage('quiz');
+    if(!cur) next(false);
+    else if(!revealed && !cur.review) next(true);   // unanswered problem: swap it for one from the new range
+  });
+  $('btn-setup').addEventListener('click',()=>{ paintSetup(); showPage('setup'); });
+
+  buildSetup(); paintSetup();
+  if(st.started){ next(false); showPage('quiz'); } else showPage('setup');
 })();
 </script>
 </body>
